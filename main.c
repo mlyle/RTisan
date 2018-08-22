@@ -13,42 +13,15 @@
 const void *_interrupt_vectors[FPU_IRQn] __attribute((section(".interrupt_vectors"))) = {
 };
 
-#define UART0_R ((volatile uint32_t *) 0x4000C000)
-
-int myputchar(int c) 
-{
-        *UART0_R = c;
-
-	return 0;
-}
-
-int stdout_impl(char c, FILE *ign)
-{
-	(void) ign;
-
-	return myputchar(c);
-}
-
-FILE outFile =
-	FDEV_SETUP_STREAM(stdout_impl, NULL, NULL, _FDEV_SETUP_WRITE);
-
-FILE * const __iob[] = {
-	NULL,
-
-	&outFile,
-	&outFile,
-};
-
 void *malloc(size_t size);
 
-void othertask(void *unused)
+void othertask(void *id)
 {
-	(void) unused;
-
+	printf("Task start, %p\n", id);
 	while (true) {
-		printf("HEllo world %p\n", unused);
+		printf("Pre-yield %p\n", id);
 		RTYield();
-		printf("Post %p\n", unused);
+		printf("Post-yield %p\n", id);
 	}
 }
 
@@ -150,28 +123,17 @@ int main() {
 
 	SysTick_Config(96000000/250);	/* 250Hz systick */
 #endif
+	printf("Initial startup, initing heap\n");
 	RTHeapInit();
 
-	printf("%d\n", strlen("testing\n"));
+	printf("Initializing tasks\n");
 
 	RTTasksInit();
-
-	printf("%d\n", strlen("testing\n"));
 	RTTaskCreate(othertask, (void *) 1);
 	RTTaskCreate(othertask, (void *) 2);
 	RTTaskCreate(othertask, (void *) 3);
 
-	printf("%d\n", strlen("testing\n"));
-	printf("testing\n");
-
-	char *a = malloc(16);
-	printf("%p\n", a);
-	a = malloc(15);
-	printf("%p\n", a);
-	a = malloc(1048576);
-	printf("%p\n", a);
-	a = malloc(16);
-	printf("%p\n", a);
+	printf("Yielding from \"main task\"\n");
 
 	RTYield();
 }
