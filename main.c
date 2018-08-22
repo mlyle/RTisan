@@ -22,41 +22,22 @@ int myputchar(int c)
 	return 0;
 }
 
-int doPrintf(const char *fmt, ...)
+int stdout_impl(char c, FILE *ign)
 {
-	va_list ap;
+	(void) ign;
 
-	/* Determine required size */
-
-	va_start(ap, fmt);
-
-	int size = vsnprintf(NULL, 0, fmt, ap);
-	va_end(ap);
-
-	if (size < 0)
-		return size;
-
-	if (size > 256)
-		return -1;
-
-	size++;             /* For '\0' */
-
-	char buf[size];
-
-	va_start(ap, fmt);
-	size = vsnprintf(buf, size, fmt, ap);
-	va_end(ap);
-
-	if (size < 0) {
-		return -1;
-	}
-
-	for (int i = 0; i < size; i++) {
-		myputchar(buf[i]);
-	}
-
-	return 0;
+	return myputchar(c);
 }
+
+FILE outFile =
+	FDEV_SETUP_STREAM(stdout_impl, NULL, NULL, _FDEV_SETUP_WRITE);
+
+FILE * const __iob[] = {
+	NULL,
+
+	&outFile,
+	&outFile,
+};
 
 void *malloc(size_t size);
 
@@ -65,9 +46,9 @@ void othertask(void *unused)
 	(void) unused;
 
 	while (true) {
-		doPrintf("HEllo world %p\n", unused);
+		printf("HEllo world %p\n", unused);
 		RTYield();
-		doPrintf("Post %p\n", unused);
+		printf("Post %p\n", unused);
 	}
 }
 
@@ -171,26 +152,26 @@ int main() {
 #endif
 	RTHeapInit();
 
-	doPrintf("%d\n", strlen("testing\n"));
+	printf("%d\n", strlen("testing\n"));
 
 	RTTasksInit();
 
-	doPrintf("%d\n", strlen("testing\n"));
+	printf("%d\n", strlen("testing\n"));
 	RTTaskCreate(othertask, (void *) 1);
 	RTTaskCreate(othertask, (void *) 2);
 	RTTaskCreate(othertask, (void *) 3);
 
-	doPrintf("%d\n", strlen("testing\n"));
-	doPrintf("testing\n");
+	printf("%d\n", strlen("testing\n"));
+	printf("testing\n");
 
 	char *a = malloc(16);
-	doPrintf("%p\n", a);
+	printf("%p\n", a);
 	a = malloc(15);
-	doPrintf("%p\n", a);
+	printf("%p\n", a);
 	a = malloc(1048576);
-	doPrintf("%p\n", a);
+	printf("%p\n", a);
 	a = malloc(16);
-	doPrintf("%p\n", a);
+	printf("%p\n", a);
 
 	RTYield();
 }

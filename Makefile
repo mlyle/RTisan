@@ -8,7 +8,8 @@ endif
 
 INC :=
 INC += inc
-
+INC += /home/mlyle/newlib/lib/newlib-nano/arm-none-eabi/include/
+INC += tools/gcc-arm-none-eabi-6-2017-q2-update/lib/gcc/arm-none-eabi/6.3.1/include/
 BUILD_DIR := build
 
 OPENLAGER_LOADER_SRC := $(wildcard loader/*.c)
@@ -27,10 +28,12 @@ CC := $(CCACHE_BIN) $(ARM_SDK_PREFIX)gcc
 CPPFLAGS += $(patsubst %,-I%,$(INC))
 #CPPFLAGS += -DSTM32F411xE -DUSE_STDPERIPH_DRIVER
 
-CFLAGS :=
+CFLAGS := -nostdinc
 # XXX -m4
 CFLAGS += -mcpu=cortex-m3 -mthumb -fdata-sections -ffunction-sections
 CFLAGS += -fomit-frame-pointer -Wall -Os -g3
+
+CFLAGS += $(CPPFLAGS)
 
 ifneq ("$(STACK_USAGE)","")
     OBJ_FORCE := FORCE
@@ -43,10 +46,14 @@ endif
 CFLAGS += -DHSE_VALUE=8000000
 
 LDFLAGS := -nostartfiles -Wl,-static -Wl,--warn-common
-LDFLAGS += -Wl,--fatal-warnings -Wl,--gc-sections
-LDFLAGS += -Ttasker.ld
 
-LIBS := -lgcc -lc_nano
+LDFLAGS += -nostdlib
+LDFLAGS += -L/home/mlyle/newlib/lib/newlib-nano/arm-none-eabi/lib/thumb/v7-m
+LDFLAGS += -Ltools/gcc-arm-none-eabi-6-2017-q2-update/lib/gcc/arm-none-eabi/6.3.1/thumb/v6-m/
+LDFLAGS += -Wl,--fatal-warnings -Wl,--gc-sections
+LDFLAGS += -Tmemory.ld -Ttasker.ld
+
+LIBS := -lc -lgcc
 
 all: build/tasker.bin
 
@@ -54,7 +61,7 @@ all: build/tasker.bin
 	$(ARM_SDK_PREFIX)objcopy -O binary $< $@
 
 build/tasker: $(OBJ)
-	$(CC) $(CFLAGS) $(LIBS) $(OBJ) -o $@ -Tmemory.ld $(LDFLAGS) 
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ) -o $@ $(LIBS)
 
 clean:
 	rm -rf $(BUILD_DIR)
