@@ -10,15 +10,13 @@ typedef struct RTTask_s *RTTask;
 
 void RTTasksInit();
 
-RTTask RTTaskCreate(void (*task)(void *), void *arg);
+typedef uint8_t WakeCounter_t;
+typedef uint8_t RTPrio_t;
 
-__attribute__((naked)) void task_switch(void);
-
-static inline void RTYield(void)
-{
-	/* PENDSVSET */
-	*((uint32_t volatile *)0xE000ED04) = 0x10000000;
-}
+RTTask RTTaskCreate(RTPrio_t prio, void (*task)(void *), void *arg);
+WakeCounter_t RTGetWakeCount(void);
+void RTWait(WakeCounter_t wakeThreshold);
+void RTSleep(uint32_t ticks);
 
 void RTHeapInit();
 

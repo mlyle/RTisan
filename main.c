@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "rtisan.h"
+#include "systick_handler.h"
 
 #define FPU_IRQn 9
 
@@ -15,13 +16,20 @@ const void *_interrupt_vectors[FPU_IRQn] __attribute((section(".interrupt_vector
 
 void *malloc(size_t size);
 
+void idletask(void *unused)
+{
+	(void) unused;
+
+	while (true);
+}
+
 void othertask(void *id)
 {
 	printf("Task start, %p\n", id);
 	while (true) {
-		printf("Pre-yield %p\n", id);
-		RTYield();
-		printf("Post-yield %p\n", id);
+		printf("Pre-sleep %p %lu\n", id, systick_cnt);
+		RTSleep((uintptr_t) id);
+		printf("Postsleep %p %lu\n", id, systick_cnt);
 	}
 }
 
@@ -129,11 +137,19 @@ int main() {
 	printf("Initializing tasks\n");
 
 	RTTasksInit();
-	RTTaskCreate(othertask, (void *) 1);
-	RTTaskCreate(othertask, (void *) 2);
-	RTTaskCreate(othertask, (void *) 3);
 
-	printf("Yielding from \"main task\"\n");
+	printf("Enabling systick\n");
+	RTEnableSystick();
 
-	RTYield();
+	RTTaskCreate(1, idletask, NULL);
+	RTTaskCreate(10, othertask, (void *) 1);
+	RTTaskCreate(10, othertask, (void *) 2);
+	RTTaskCreate(10, othertask, (void *) 3);
+
+#if 0
+	printf("Waiting from \"main task\"\n");
+
+	RTWait();
+#endif
+	RTWait(1);
 }

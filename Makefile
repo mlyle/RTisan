@@ -31,7 +31,7 @@ CPPFLAGS += $(patsubst %,-I%,$(INC))
 CFLAGS := -nostdinc
 # XXX -m4
 CFLAGS += -mcpu=cortex-m3 -mthumb -fdata-sections -ffunction-sections
-CFLAGS += -fomit-frame-pointer -Wall -Os -g3
+CFLAGS += -fomit-frame-pointer -Wall -Og -g3
 
 CFLAGS += $(CPPFLAGS)
 

@@ -9,6 +9,7 @@ SECTIONS
 		KEEP(*(.pendsv_vector))
 		KEEP(*(.systick_vector))
 		KEEP(*(.interrupt_vectors))
+		_end_vectors = .;
 		. = ALIGN(4);
 	} >FLASH
 

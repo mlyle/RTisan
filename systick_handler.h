@@ -30,5 +30,6 @@
 #include <stdint.h>
 
 extern volatile uint32_t systick_cnt;
+void RTEnableSystick(void);
 
 #endif // _SYSTICK_HANDLER_H

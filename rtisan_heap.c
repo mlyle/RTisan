@@ -14,18 +14,23 @@ void RTHeapInit()
 	HeapSize = ((uintptr_t) &_eheap) - ((uintptr_t) &_sheap);
 }
 
-void *malloc(size_t size)
+/* alignment must be a power of 2 */
+inline void *aligned_alloc(size_t alignment, size_t size)
 {
 	/* We don't implement negative sbrk, etc */
 	if (size < 0) {
 		return NULL;
 	}
 
+	if (alignment == 0) {
+		alignment = 1;
+	}
+
 	/* bump up size to be aligned */
-	uint8_t alignFudge = size & 0x03;
+	uint8_t alignFudge = size & (alignment - 1);
 
 	if (alignFudge) {
-		size += 4 - alignFudge;
+		size += alignment - alignFudge;
 	}
 
 	/* Use atomics for an efficient heap allocator */
@@ -43,8 +48,14 @@ void *malloc(size_t size)
 	}
 }
 
+inline void *malloc(size_t size)
+{
+	return aligned_alloc(sizeof(uintptr_t), size);
+}
+
 void *calloc(size_t nmemb, size_t size)
 {
+	/* XXX: could overrun */
 	size_t fullSize = nmemb * size;
 
 	void *ret = malloc(fullSize);
