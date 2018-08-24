@@ -199,10 +199,12 @@ void RTWait(WakeCounter_t wakeThreshold)
 
 		bInfo.fields.wakeThreshold = wakeThreshold;
 
+#if 0
 		if (BlockingInfoIsWoke(&bInfo)) {
 			/* Don't yield: we're still eligible to run. */
 			return;
 		}
+#endif
 	} while (!__sync_bool_compare_and_swap(
 					&task->blockingInfo.val32,
 					original,
@@ -219,7 +221,7 @@ void RTSleep(uint32_t ticks)
 
 	int32_t remain;
 	
-	while ((remain = completion - systick_cnt) > 0) {
+	while ((remain = (completion - systick_cnt)) > 0) {
 		if (remain > MAX_SLEEP_CHUNK) {
 			remain = MAX_SLEEP_CHUNK;
 		}
@@ -229,6 +231,8 @@ void RTSleep(uint32_t ticks)
 		task->ticksCreateWakes = true;
 
 		RTWait(RTGetWakeCount() + remain);
+
+		task->ticksCreateWakes = false;
 	};
 }
 
@@ -258,6 +262,7 @@ __attribute__((naked)) void RTTaskSave(void *task_sp,
 static __attribute__((naked, noreturn)) void RTTaskSwitch()
 {
 	/* XXX short-circuit if desired task to run is current task */
+	/* XXX the way initial startup works is pessimal */
 	asm volatile(
 			/* Capture current task's stack */
 			"mrs r0, psp\n\t" 

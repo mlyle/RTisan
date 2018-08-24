@@ -128,8 +128,6 @@ int main() {
 
 	// Wait for the PLL to be ready.
 	while (RCC_GetFlagStatus(RCC_FLAG_PLLRDY) == RESET);
-
-	SysTick_Config(96000000/250);	/* 250Hz systick */
 #endif
 	printf("Initial startup, initing heap\n");
 	RTHeapInit();
@@ -144,12 +142,8 @@ int main() {
 	RTTaskCreate(1, idletask, NULL);
 	RTTaskCreate(10, othertask, (void *) 1);
 	RTTaskCreate(10, othertask, (void *) 2);
-	RTTaskCreate(10, othertask, (void *) 3);
+	RTTaskCreate(10, othertask, (void *) 128);
 
-#if 0
 	printf("Waiting from \"main task\"\n");
-
-	RTWait();
-#endif
-	RTWait(1);
+	RTWait(0);
 }
