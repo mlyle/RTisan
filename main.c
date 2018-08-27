@@ -14,6 +14,8 @@
 const void *_interrupt_vectors[FPU_IRQn] __attribute((section(".interrupt_vectors"))) = {
 };
 
+RTLock lock;
+
 void *malloc(size_t size);
 
 void idletask(void *unused)
@@ -23,13 +25,24 @@ void idletask(void *unused)
 	while (true);
 }
 
-void othertask(void *id)
+void othertask(void *ctx)
 {
-	printf("Task start, %p\n", id);
+	printf("Task start, %p\n", ctx);
 	while (true) {
-		printf("Pre-sleep %p %lu\n", id, systick_cnt);
-		RTSleep((uintptr_t) id);
-		printf("Postsleep %p %lu\n", id, systick_cnt);
+		printf("%02d Pre-lock %p %lu\n", RTGetTaskId(), ctx,
+				systick_cnt);
+		RTLockLock(lock);
+		printf("%02d Presleep %p %lu\n", RTGetTaskId(), ctx,
+				systick_cnt);
+		RTSleep((uintptr_t) ctx);
+		printf("%02d Preunlck %p %lu\n", RTGetTaskId(), ctx,
+				systick_cnt);
+		RTLockUnlock(lock);
+		printf("%02d Preslp2  %p %lu\n", RTGetTaskId(), ctx,
+				systick_cnt);
+		RTSleep((uintptr_t) ctx);
+		printf("%02d Postall  %p %lu\n", RTGetTaskId(), ctx,
+				systick_cnt);
 	}
 }
 
@@ -139,10 +152,12 @@ int main() {
 	printf("Enabling systick\n");
 	RTEnableSystick();
 
+	lock = RTLockCreate();
+
 	RTTaskCreate(1, idletask, NULL);
-	RTTaskCreate(10, othertask, (void *) 1);
-	RTTaskCreate(10, othertask, (void *) 2);
-	RTTaskCreate(10, othertask, (void *) 128);
+	RTTaskCreate(10, othertask, (void *) 3);
+	RTTaskCreate(11, othertask, (void *) 7);
+	RTTaskCreate(12, othertask, (void *) 128);
 
 	printf("Waiting from \"main task\"\n");
 	RTWait(0);

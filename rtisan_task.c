@@ -32,7 +32,20 @@ struct RTTask_s {
 	uint32_t canary;
 };
 
-static RTTask taskTable[TASK_MAX];
+union LockInfo {
+	struct {
+		TaskId_t holder;
+	} fields;
+
+	uint32_t val32;
+};
+
+struct RTLock_s {
+	volatile union LockInfo lockInfo;
+	volatile uint16_t waiters[LOCK_WAITERS_MAX];
+};
+
+static RTTask taskTable[TASK_MAX + 1];
 static int curTask;
 
 void RTTasksInit()
@@ -41,9 +54,9 @@ void RTTasksInit()
 
 RTTask RTTaskCreate(RTPrio_t prio, void (*task)(void *), void *arg)
 {
-	int i = 0;
+	int i = 1;
 
-	for(i = 0; i < TASK_MAX; i++) {
+	for(i = 1; i <= TASK_MAX; i++) {
 		if (taskTable[i]) {
 			continue;
 		}
@@ -82,8 +95,13 @@ RTTask RTTaskCreate(RTPrio_t prio, void (*task)(void *), void *arg)
 		taskTable[i]->canary = 5678;
 		return taskTable[i];
         } 
-	
+
 	return NULL;
+}
+
+inline TaskId_t RTGetTaskId(void)
+{
+	return curTask;
 }
 
 static inline RTTask RTTaskSelected(void)
@@ -136,7 +154,7 @@ static RTTask RTTaskToRun(bool ticking)
 	int bestTask = 0;
 	int bestPrio = -1;
 
-	for (int i = 0; i < TASK_MAX; i++) {
+	for (int i = 1; i <= TASK_MAX; i++) {
 		if (!taskTable[i]) {
 			continue;
 		}
@@ -198,20 +216,19 @@ void RTWait(WakeCounter_t wakeThreshold)
 		bInfo.val32 = original;
 
 		bInfo.fields.wakeThreshold = wakeThreshold;
-
-#if 0
-		if (BlockingInfoIsWoke(&bInfo)) {
-			/* Don't yield: we're still eligible to run. */
-			return;
-		}
-#endif
-	} while (!__sync_bool_compare_and_swap(
+	} while ((original != bInfo.val32) &&
+			(!__sync_bool_compare_and_swap(
 					&task->blockingInfo.val32,
 					original,
-					bInfo.val32));
+					bInfo.val32)));
 
 	/* PENDSVSET */
 	*((uint32_t volatile *)0xE000ED04) = 0x10000000;
+}
+
+void RTYield(void)
+{
+	RTWait(RTGetWakeCount());
 }
 
 #define MAX_SLEEP_CHUNK 127
@@ -220,7 +237,7 @@ void RTSleep(uint32_t ticks)
 	uint32_t completion = systick_cnt + ticks;
 
 	int32_t remain;
-	
+
 	while ((remain = (completion - systick_cnt)) > 0) {
 		if (remain > MAX_SLEEP_CHUNK) {
 			remain = MAX_SLEEP_CHUNK;
@@ -305,3 +322,120 @@ static __attribute__((naked, noreturn)) void RTTaskSwitch()
 
 const void *_pendsv_vector __attribute((section(".pendsv_vector"))) =
 		RTTaskSwitch;
+
+/* Locking, overall theory.
+ *
+ * When a higher priority task awaits a lock, it needs to sleep and let the
+ * lower priority tasks run so that the lock may be released.  The lower
+ * priority tasks should be raised to the priority of the highest prio
+ * waiter.
+ *
+ * When a lower priority task desires a lock, it's sufficient to just wait.
+ * No priority twiddling is necessary.
+ *
+ * When a task releases the lock, it's sufficient to wake all waiting tasks
+ * and then schedule in descending priority order.
+ */
+
+RTLock RTLockCreate(void)
+{
+	RTLock lock = calloc(1, sizeof(*lock));
+
+	if (!lock) {
+		return NULL;
+	}
+
+	return lock;
+}
+
+void RTLockUnlock(RTLock lock)
+{
+	TaskId_t ourTask = RTGetTaskId();
+
+	lock->lockInfo.val32 = 0;
+
+	bool wokeSomeone;
+
+	/* Remove ourselves from waiters, wake all others */
+	for (int i = 0; i < LOCK_WAITERS_MAX; i++) {
+		TaskId_t task = lock->waiters[i];
+
+		if (task != ourTask) {
+			/* Can result in extra wakes */
+			IncrementWakes(taskTable[task]);
+
+			wokeSomeone = true;
+		} else {
+			lock->waiters[i] = 0;
+		}
+	}
+
+	if (wokeSomeone) {
+		RTYield();	/* Let the scheduler figure out if they
+				 * should run. */
+	}
+}
+
+int RTLockTryLock(RTLock lock)
+{
+	union LockInfo lockInfo = {};
+
+	lockInfo.fields.holder = RTGetTaskId();
+
+	if (__sync_bool_compare_and_swap(
+					&lock->lockInfo.val32,
+					0,
+					lockInfo.val32)) {
+		return 0;
+	} else {
+		return -1;
+	}
+}
+
+int RTLockLock(RTLock lock)
+{
+	TaskId_t ourTask = RTGetTaskId();
+
+	if (RTLockTryLock(lock)) {
+		/* Alas, not able to get lock.  So let's add ourselves
+		 * to set of waiters.
+		 *
+		 * First, we add ourselves to the wake list.
+		 *
+		 * Second, we get our current wake count, before checking
+		 * if we can get the lock.
+		 *
+		 * Third, if we couldn't, we wait for that wake count
+		 * to increment.
+		 */
+
+		bool added = false;
+
+		for (int i = 0; i < LOCK_WAITERS_MAX; i++) {
+			if (__sync_bool_compare_and_swap(&lock->waiters[i],
+						0,
+						ourTask)) {
+				added = true;
+				break;
+			}
+		}
+
+		if (!added) {
+			/* Couldn't lock.  Waiter list full. */
+			return -1;
+		}
+
+		WakeCounter_t count = RTGetWakeCount();
+
+		while (RTLockTryLock(lock)) {
+			/* XXX Prio Inh */
+			RTWait(++count);
+
+			count = RTGetWakeCount();
+		}
+
+		/* We'll be removed from waiters when we unlock */
+	}
+
+	return 0;
+}
