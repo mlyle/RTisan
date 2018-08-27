@@ -1,3 +1,5 @@
+#qemu-system-arm -machine lm3s6965evb -nographic -kernel build/tasker -chardev stdio,mux=on,id=a0 -mon chardev=a0,mode=readline -serial chardev:a0 | less ; stty sane
+
 TOOLS_DIR := tools
 ARM_SDK_DIR := $(TOOLS_DIR)/gcc-arm-none-eabi-5_2-2015q4
 ARM_SDK_PREFIX := $(ARM_SDK_DIR)/bin/arm-none-eabi-
