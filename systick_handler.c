@@ -1,5 +1,8 @@
 // Dummy RTisan systick handler.  (C) Copyright 2018 Michael Lyle
 
+#include <stm32f303xc.h>
+#include <core_cm4.h>
+
 #include "systick_handler.h"
 
 static void systick_handler() __attribute__((interrupt));
@@ -13,8 +16,10 @@ static void systick_handler()
 
 void RTEnableSystick(void)
 {
-	*((uint32_t *) 0xE000E014) = 50000;
-	*((uint32_t *) 0xE000E010) = 0x00000007;
+	SysTick->LOAD = 50000;
+	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk |
+		SysTick_CTRL_TICKINT_Msk |
+		SysTick_CTRL_ENABLE_Msk;
 }
 
 const void *_systick_vector __attribute((section(".systick_vector"))) = systick_handler;

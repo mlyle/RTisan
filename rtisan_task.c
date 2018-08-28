@@ -6,6 +6,9 @@
 #include "rtisan.h"
 #include "systick_handler.h"
 
+#include <stm32f303xc.h>
+#include <core_cm4.h>
+
 #define THUMB_PC_MASK 0xfffffffe
 #define EXC_RET_THREAD 0xfffffffd
 
@@ -230,8 +233,8 @@ void RTWait(WakeCounter_t wakeThreshold)
 					original,
 					bInfo.val32)));
 
-	/* PENDSVSET */
-	*((uint32_t volatile *)0xE000ED04) = 0x10000000;
+	/* Ensure PendSV is set */
+	SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
 }
 
 void RTYield(void)

@@ -10,6 +10,8 @@ endif
 
 INC :=
 INC += inc
+INC += libs/inc/stm32f3xx
+INC += libs/inc/cmsis
 INC += /home/mlyle/newlib/lib/newlib-nano/arm-none-eabi/include/
 INC += tools/gcc-arm-none-eabi-6-2017-q2-update/lib/gcc/arm-none-eabi/6.3.1/include/
 BUILD_DIR := build
