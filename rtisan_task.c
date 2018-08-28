@@ -46,7 +46,7 @@ struct RTLock_s {
 };
 
 static RTTask taskTable[TASK_MAX + 1];
-static int curTask;
+static TaskId_t curTask;
 
 void RTTasksInit()
 {
@@ -75,13 +75,14 @@ RTTask RTTaskCreate(RTPrio_t prio, void (*task)(void *), void *arg)
 		/* setup initial stack frame */
 		*(--taskTable[i]->sp) = 0x21000000; /* Initial PSR */
 		*(--taskTable[i]->sp) = (uint32_t) task & THUMB_PC_MASK;
-		*(--taskTable[i]->sp) = 0;           /* lr */ 
+		*(--taskTable[i]->sp) = 0;           /* lr */
 		*(--taskTable[i]->sp) = 0;           /* r12 */
 		*(--taskTable[i]->sp) = 0;           /* r3  */
 		*(--taskTable[i]->sp) = 0;           /* r2  */
 		*(--taskTable[i]->sp) = 0;           /* r1  */
 		*(--taskTable[i]->sp) = (uint32_t) arg; /* r0  */
 
+		*(--taskTable[i]->sp) = EXC_RET_THREAD;  /* ret vec  */
 		*(--taskTable[i]->sp) = 0;           /* r11  */
 		*(--taskTable[i]->sp) = 0;           /* r10  */
 		*(--taskTable[i]->sp) = 0;           /* r9   */
@@ -90,11 +91,10 @@ RTTask RTTaskCreate(RTPrio_t prio, void (*task)(void *), void *arg)
 		*(--taskTable[i]->sp) = 0;           /* r6   */
 		*(--taskTable[i]->sp) = 0;           /* r5   */
 		*(--taskTable[i]->sp) = 0;           /* r4   */
-		*(--taskTable[i]->sp) = EXC_RET_THREAD;  /* ret vec  */
 
 		taskTable[i]->canary = 5678;
 		return taskTable[i];
-        } 
+        }
 
 	return NULL;
 }
@@ -107,12 +107,6 @@ inline TaskId_t RTGetTaskId(void)
 static inline RTTask RTTaskSelected(void)
 {
 	return taskTable[curTask];
-}
-
-void RTTaskSetPSP(void *psp)
-{
-	RTTask ourTask = RTTaskSelected();
-	ourTask->sp = psp;
 }
 
 static bool BlockingInfoIsWoke(union BlockingInfo *bInfo)
@@ -149,9 +143,18 @@ static void IncrementWakes(RTTask task)
 					bInfo.val32));
 }
 
-static RTTask RTTaskToRun(bool ticking)
+TaskId_t RTTaskToRun(void)
 {
-	int bestTask = 0;
+	static uint32_t lastSystick;
+	uint32_t nowSystick = systick_cnt;
+	bool ticking = false;
+
+	if (nowSystick != lastSystick) {
+		lastSystick = nowSystick;
+		ticking = true;
+	}
+
+	TaskId_t bestTask = 0;
 	int bestPrio = -1;
 
 	for (int i = 1; i <= TASK_MAX; i++) {
@@ -179,23 +182,28 @@ static RTTask RTTaskToRun(bool ticking)
 		}
 	}
 
-	curTask = bestTask;
-
-	return RTTaskSelected();
-}
-
-void *RTStackToRun(void)
-{
-	static uint32_t lastSystick;
-	uint32_t nowSystick = systick_cnt;
-	bool ticking = false;
-
-	if (nowSystick != lastSystick) {
-		lastSystick = nowSystick;
-		ticking = true;
+	if (bestTask == curTask) {
+		return 0;
 	}
 
-	return RTTaskToRun(ticking)->sp;
+	return bestTask;
+}
+
+/* Saves PSP into current task.  Selects newTask and returns its SP.
+ */
+void *RTTaskStackSave(TaskId_t newTask, void *psp)
+{
+	RTTask ourTask = RTTaskSelected();
+
+	if (psp) {
+		ourTask->sp = psp;
+	}
+
+	curTask = newTask;
+
+	ourTask = RTTaskSelected();
+
+	return ourTask->sp;
 }
 
 WakeCounter_t RTGetWakeCount(void)
@@ -253,70 +261,78 @@ void RTSleep(uint32_t ticks)
 	};
 }
 
-__attribute__((naked)) void RTTaskSave(void *task_sp,
-		void *old_lr)
-{
-	asm volatile(
-			/* Save current stack (MSP) */
-			"mov r2, sp\n\t"
-
-			/* Install task stack (PSP), copy registers */
-			"mov sp, r0\n\t"
-			"push {r4-r11}\n\t"
-			"push {r1}\n\t"
-
-			/* Preserve new task stack value (PSP) */
-			"mov r0, sp\n\t"
-
-			/* Restore original (MSP) stack */
-			"mov sp, r2\n\t"
-
-			/* Really save psp, tail call opt */
-			"b RTTaskSetPSP\n\t"
-		    );
-}
-
 static __attribute__((naked, noreturn)) void RTTaskSwitch()
 {
-	/* XXX short-circuit if desired task to run is current task */
 	/* XXX the way initial startup works is pessimal */
 	asm volatile(
-			/* Capture current task's stack */
-			"mrs r0, psp\n\t" 
-			/* And the current LR-- the 'exception exit'
-			 * value
-			 */
-			"mov r1, lr\n\t"
+			// Identify where to switch
+			"push {lr}\n\t"
+			"bl RTTaskToRun\n\t"
+			"pop {lr}\n\t"
 
-			/* If current stack defined, save context */
-       			"cmp r0, #0\n\t"
-       			"it ne\n\t"
-        		"blne RTTaskSave\n\t"
+			// If it's the same as where we are now, escape
+			"cmp r0, #0\n\t"
+			"it eq\n\t"
+			"beq alldone\n\t"
 
-			/* Identify stack pointer of where to switch */
-			"bl RTStackToRun\n\t"
+			// Capture the stack pointer from current user task
+			"mrs r1, psp\n\t"
 
-			/* Capture current stack, save to MSP */
+			// If it's undefined, e.g. startup, skip saving
+			// context.
+			// XXX the way initial startup works is pessimal.
+			"cmp r1, #0\n\t"
+			"it eq\n\t"
+			"beq savedone\n\t"
+
+			// Set aside current exception stack
+			"mov r3, sp\n\t"
+
+			// Install current task stack, save registers that
+			// the exception entry didn't save.
+			"mov sp, r1\n\t"
+			"push {r4-r11, lr}\n\t"
+
+			// Capture this stack value in R1
+			"mov r1, sp\n\t"
+
+			// Restore the exception stack into place
+			"mov sp, r3\n\t"
+
+		"savedone:\n\t"
+			// void *RTTaskStackSave(TaskId_t newTask, void *psp)
+			// r0 = newTask   r1 = old task stack val
+			// r0 comes from ret of RTTaskToRun and is untouched
+			// r1 is either: 0 if we're in the startup case, or
+			// the new user stack value after saving all the
+			// registers above.
+			//
+			// This saves the old stack (if applicable),
+			// switches to the new task identifier, and returns
+			// the user task stack pointer.
+			"bl RTTaskStackSave\n\t"
+
+			// Store current stack pointer in R1 & MSP
 			"mov r1, sp\n\t"
 			"msr msp, r1\n\t"
 
-			/* Install task stackpointer */
+			// Install the stack pointer of the switched-to task
 			"mov sp, r0\n\t"
 
-			/* Restore task registers */
-			"pop {lr}\n\t"
-			"pop {r4-r11}\n\t"
+			// Restore switched-to task registers
+			"pop {r4-r11, lr}\n\t"
 
-			/* Store new stack pointer to PSP */
+			// Install current task stack value into PSP
 			"mov r0, sp\n\t"
 			"msr psp, r0\n\t"
 
-			/* Restore original exception stack */
+			// Restore the exception stack.
 			"mov sp, r1\n\t"
 
-			/* Return from exception into user task;
-			 * CPU pops last few registers, etc.
-			 */
+		"alldone:\n\t"
+			// Return from exception into user task;
+			// CPU restores task stack,
+			// pops r0-r3, r12, lr, pc
 			"bx lr\n\t");
 }
 
