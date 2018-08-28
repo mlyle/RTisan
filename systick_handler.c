@@ -1,9 +1,6 @@
 // Dummy RTisan systick handler.  (C) Copyright 2018 Michael Lyle
 
-#include <stm32f303xc.h>
-#include <core_cm4.h>
-
-#include "systick_handler.h"
+#include "rtisan_internal.h"
 
 static void systick_handler() __attribute__((interrupt));
 

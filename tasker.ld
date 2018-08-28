@@ -47,19 +47,13 @@ SECTIONS
 		*(COMMON)
 		. = ALIGN(4);
 		_ebss = .;
-	} >RAM
-
-	.mainstack :
-	{
 		. = ALIGN(4);
+
 		_stack_bottom = .;
-		. += 4096;
+		. += 4092;
 		_stack_top = .;
 		. += 4;
-	} >RAM
 
-	.heap :
-	{
 		. = ALIGN(4);
 		_sheap = .;
 		. = ORIGIN(RAM) + LENGTH(RAM);

@@ -1,12 +1,13 @@
 #include <stdio.h>
 
-#define UART0_R ((volatile uint32_t *) 0x4000C000)
+#include "rtisan_internal.h"
 
 static int stdout_impl(char c, FILE *ign)
 {
 	(void) ign;
 
-        *UART0_R = c;
+	USART1->CR1 = USART_CR1_UE_Msk | USART_CR1_TE_Msk;
+	USART1->DR = c;
 	return 0;
 }
 

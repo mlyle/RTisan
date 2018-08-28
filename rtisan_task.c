@@ -3,11 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "rtisan.h"
-#include "systick_handler.h"
-
-#include <stm32f303xc.h>
-#include <core_cm4.h>
+#include "rtisan_internal.h"
 
 #define THUMB_PC_MASK 0xfffffffe
 #define EXC_RET_THREAD 0xfffffffd

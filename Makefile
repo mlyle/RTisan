@@ -10,6 +10,7 @@ endif
 
 INC :=
 INC += inc
+INC += libs/inc/stm32f4xx
 INC += libs/inc/stm32f3xx
 INC += libs/inc/cmsis
 INC += /home/mlyle/newlib/lib/newlib-nano/arm-none-eabi/include/
@@ -33,8 +34,7 @@ CPPFLAGS += $(patsubst %,-I%,$(INC))
 #CPPFLAGS += -DSTM32F411xE -DUSE_STDPERIPH_DRIVER
 
 CFLAGS := -nostdinc
-# XXX -m4
-CFLAGS += -mcpu=cortex-m3 -mthumb -fdata-sections -ffunction-sections
+CFLAGS += -mcpu=cortex-m4 -mthumb -fdata-sections -ffunction-sections
 CFLAGS += -fomit-frame-pointer -Wall -Og -g3
 
 CFLAGS += $(CPPFLAGS)
