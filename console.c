@@ -19,5 +19,3 @@ FILE * const __iob[] = {
 	&outFile,
 	&outFile,
 };
-
-

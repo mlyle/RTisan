@@ -45,14 +45,14 @@ struct RTLock_s {
 	volatile uint16_t waiters[LOCK_WAITERS_MAX];
 };
 
-static RTTask taskTable[TASK_MAX + 1];
+static RTTask_t taskTable[TASK_MAX + 1];
 static TaskId_t curTask;
 
 void RTTasksInit()
 {
 }
 
-RTTask RTTaskCreate(RTPrio_t prio, void (*task)(void *), void *arg)
+RTTask_t RTTaskCreate(RTPrio_t prio, void (*task)(void *), void *arg)
 {
 	int i = 1;
 
@@ -104,7 +104,7 @@ inline TaskId_t RTGetTaskId(void)
 	return curTask;
 }
 
-static inline RTTask RTTaskSelected(void)
+static inline RTTask_t RTTaskSelected(void)
 {
 	return taskTable[curTask];
 }
@@ -117,7 +117,7 @@ static bool BlockingInfoIsWoke(union BlockingInfo *bInfo)
 	return wakeConsider <= 0;
 }
 
-static bool RTTaskIsWoke(RTTask task)
+static bool RTTaskIsWoke(RTTask_t task)
 {
 	union BlockingInfo bInfo;
 
@@ -126,7 +126,7 @@ static bool RTTaskIsWoke(RTTask task)
 	return BlockingInfoIsWoke(&bInfo);
 }
 
-static void IncrementWakes(RTTask task)
+static void IncrementWakes(RTTask_t task)
 {
 	uint32_t original;
 	union BlockingInfo bInfo;
@@ -193,7 +193,7 @@ TaskId_t RTTaskToRun(void)
  */
 void *RTTaskStackSave(TaskId_t newTask, void *psp)
 {
-	RTTask ourTask = RTTaskSelected();
+	RTTask_t ourTask = RTTaskSelected();
 
 	if (psp) {
 		ourTask->sp = psp;
@@ -213,7 +213,7 @@ WakeCounter_t RTGetWakeCount(void)
 
 void RTWait(WakeCounter_t wakeThreshold)
 {
-	RTTask task = RTTaskSelected();
+	RTTask_t task = RTTaskSelected();
 
 	uint32_t original;
 	union BlockingInfo bInfo;
@@ -251,7 +251,7 @@ void RTSleep(uint32_t ticks)
 			remain = MAX_SLEEP_CHUNK;
 		}
 
-		RTTask task = RTTaskSelected();
+		RTTask_t task = RTTaskSelected();
 
 		task->ticksCreateWakes = true;
 
@@ -353,9 +353,9 @@ const void *_pendsv_vector __attribute((section(".pendsv_vector"))) =
  * and then schedule in descending priority order.
  */
 
-RTLock RTLockCreate(void)
+RTLock_t RTLockCreate(void)
 {
-	RTLock lock = calloc(1, sizeof(*lock));
+	RTLock_t lock = calloc(1, sizeof(*lock));
 
 	if (!lock) {
 		return NULL;
@@ -364,7 +364,7 @@ RTLock RTLockCreate(void)
 	return lock;
 }
 
-void RTLockUnlock(RTLock lock)
+void RTLockUnlock(RTLock_t lock)
 {
 	TaskId_t ourTask = RTGetTaskId();
 
@@ -392,7 +392,7 @@ void RTLockUnlock(RTLock lock)
 	}
 }
 
-int RTLockTryLock(RTLock lock)
+int RTLockTryLock(RTLock_t lock)
 {
 	union LockInfo lockInfo = {};
 
@@ -408,7 +408,7 @@ int RTLockTryLock(RTLock lock)
 	}
 }
 
-int RTLockLock(RTLock lock)
+int RTLockLock(RTLock_t lock)
 {
 	TaskId_t ourTask = RTGetTaskId();
 

@@ -14,7 +14,7 @@
 const void *_interrupt_vectors[FPU_IRQn] __attribute((section(".interrupt_vectors"))) = {
 };
 
-RTLock lock;
+RTLock_t lock;
 
 void *malloc(size_t size);
 
