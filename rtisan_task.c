@@ -210,6 +210,11 @@ WakeCounter_t RTGetWakeCount(void)
 	return RTTaskSelected()->blockingInfo.fields.wakeCount;
 }
 
+void RTGo(void)
+{
+	SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
+}
+
 void RTWait(WakeCounter_t wakeThreshold)
 {
 	RTTask_t task = RTTaskSelected();
@@ -377,9 +382,11 @@ void RTLockUnlock(RTLock_t lock)
 
 		if (task != ourTask) {
 			/* Can result in extra wakes */
-			IncrementWakes(taskTable[task]);
+			if (task) {
+				IncrementWakes(taskTable[task]);
 
-			wokeSomeone = true;
+				wokeSomeone = true;
+			}
 		} else {
 			lock->waiters[i] = 0;
 		}

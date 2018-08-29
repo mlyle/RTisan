@@ -19,6 +19,7 @@ typedef uint16_t TaskId_t;
 RTTask_t RTTaskCreate(RTPrio_t prio, void (*task)(void *), void *arg);
 WakeCounter_t RTGetWakeCount(void);
 void RTWait(WakeCounter_t wakeThreshold);
+void RTGo(void);
 void RTSleep(uint32_t ticks);
 TaskId_t RTGetTaskId(void);
 

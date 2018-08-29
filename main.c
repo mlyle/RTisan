@@ -85,5 +85,5 @@ int main() {
 	RTTaskCreate(12, othertask, (void *) 128);
 
 	printf("Waiting from \"main task\"\n");
-	RTWait(0);
+	RTGo();
 }
