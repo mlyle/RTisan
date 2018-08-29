@@ -22,15 +22,31 @@ void ClockConfiguration(void)
 	// Wait for it to be ticking nice.
 	while (!(RCC->CR &  RCC_CR_PLLRDY_Msk));
 
-	RCC->CFGR =
-			(RCC_CFGR_SW_PLL) |
-			(RCC_CFGR_HPRE_DIV1) |
-			(RCC_CFGR_PPRE1_DIV4) |
-			(RCC_CFGR_PPRE2_DIV2);
-
 	RCC->APB2ENR |= RCC_APB2ENR_USART1EN_Msk;
 	RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN_Msk;
 #endif
+
+	FLASH->ACR = (FLASH->ACR & FLASH_ACR_LATENCY_Msk) |
+		FLASH_ACR_LATENCY_2;
+
+	RCC->CFGR =
+			(RCC_CFGR_HPRE_DIV1) |
+			(RCC_CFGR_PPRE1_DIV2) |
+			(RCC_CFGR_PPRE2_DIV1) |
+			(RCC_CFGR_PLLMUL9) |
+			(RCC_CFGR_PLLSRC_HSE_PREDIV);
+
+	// Enable it.
+	RCC->CR |= RCC_CR_PLLON_Msk;
+
+	// Wait for it to be ticking nice.
+	while (!(RCC->CR & RCC_CR_PLLRDY_Msk));
+
+	RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_SW_Msk) |
+		RCC_CFGR_SW_PLL;
+
+	while ((RCC->CFGR & RCC_CFGR_SWS_Msk) != RCC_CFGR_SWS_PLL);
+
 	RCC->APB2ENR |= RCC_APB2ENR_USART1EN_Msk;
 	RCC->AHBENR |= RCC_AHBENR_GPIOEEN_Msk;
 #if 0
