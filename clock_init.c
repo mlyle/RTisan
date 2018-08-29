@@ -8,6 +8,7 @@ void ClockConfiguration(void)
 	// Wait for it to be ticking nice.
 	while (!(RCC->CR & RCC_CR_HSERDY_Msk));
 
+#if 0
 	// Program the PLL.
 	RCC->PLLCFGR =
 			(4 << RCC_PLLCFGR_PLLM_Pos) |
@@ -29,6 +30,9 @@ void ClockConfiguration(void)
 
 	RCC->APB2ENR |= RCC_APB2ENR_USART1EN_Msk;
 	RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN_Msk;
+#endif
+	RCC->APB2ENR |= RCC_APB2ENR_USART1EN_Msk;
+	RCC->AHBENR |= RCC_AHBENR_GPIOEEN_Msk;
 #if 0
 	/* SDIO peripheral clocked at 38.4MHz. * 3/8 = minimum APB2 = 14.4MHz,
 	 * and we have 96MHz.. so we're good ;) */

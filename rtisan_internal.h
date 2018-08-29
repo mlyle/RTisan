@@ -1,7 +1,7 @@
 #ifndef __RTISAN_INTERNAL_H
 #define __RTISAN_INTERNAL_H
 
-#define STM32F405
+#define STM32F303
 
 #if defined(STM32F303)
 #define STM32F30X

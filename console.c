@@ -6,8 +6,8 @@ static int stdout_impl(char c, FILE *ign)
 {
 	(void) ign;
 
-	USART1->CR1 = USART_CR1_UE_Msk | USART_CR1_TE_Msk;
-	USART1->DR = c;
+//	USART1->CR1 = USART_CR1_UE_Msk | USART_CR1_TE_Msk;
+//	USART1->DR = c;
 	return 0;
 }
 
