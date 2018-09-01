@@ -80,8 +80,8 @@ void *RTCQWritePos(RTCircQueue_t q, uint16_t *contig,
 			}
 			*contig = q->numElem - wrHead + offset;
 		} else {
-			/* rd_tail > wr_head */
-			/* wr_head is not allowed to advance to meet tail,
+			/* rdTail > wrHead */
+			/* wrHead is not allowed to advance to meet tail,
 			 * so minus one */
 			*contig = rdTail - wrHead - 1;
 		}
@@ -89,10 +89,10 @@ void *RTCQWritePos(RTCircQueue_t q, uint16_t *contig,
 
 	if (avail) {
 		if (rdTail <= wrHead) {
-			/* To end of buf, to rd_tail, minus one. */
+			/* To end of buf, to rdTail, minus one. */
 			*avail = q->numElem - wrHead + rdTail - 1;
 		} else {
-			/* Otherwise just to 1 before rd_tail. */
+			/* Otherwise just to 1 before rdTail. */
 			*avail = rdTail - wrHead - 1;
 		}
 	}
@@ -185,15 +185,15 @@ int RTCQWriteAdvanceOne(RTCircQueue_t q) {
  */
 void *RTCQReadPos(RTCircQueue_t q, uint16_t *contig, uint16_t *avail) {
 	uint16_t readTail = q->readTail;
-	uint16_t wr_head = q->writeHead;
+	uint16_t wrHead = q->writeHead;
 
 	void *contents = q->contents;
 
 	if (contig) {
-		if (wr_head >= readTail) {
+		if (wrHead >= readTail) {
 			/* readTail is allowed to advance to meet head,
 			 * so no minus one here. */
-			*contig = wr_head - readTail;
+			*contig = wrHead - readTail;
 		} else {
 			/* Number of contiguous elements to end of the buf,
 			 * otherwise. */
@@ -202,17 +202,17 @@ void *RTCQReadPos(RTCircQueue_t q, uint16_t *contig, uint16_t *avail) {
 	}
 
 	if (avail) {
-		if (wr_head >= readTail) {
+		if (wrHead >= readTail) {
 			/* Same as immediately above; no wrap avail */
-			*avail = wr_head - readTail;
+			*avail = wrHead - readTail;
 		} else {
 			/* Distance to end, plus distance from beginning
-			 * to wr_head */
-			*avail = q->numElem - readTail + wr_head;
+			 * to wrHead */
+			*avail = q->numElem - readTail + wrHead;
 		}
 	}
 
-	if (wr_head == readTail) {
+	if (wrHead == readTail) {
 		/* There is nothing new to read.  */
 		return NULL;
 	}
@@ -270,6 +270,9 @@ void RTCQReadDoneMulti(RTCircQueue_t q, uint16_t num) {
 	/* Legal states at the end of this are---
 	 * a "later place" in the buffer without wrapping.
 	 * or the 0th position-- if we've consumed all to the end.
+	 *
+	 * In other words, we'd better have not advanced *past* the
+	 * end.
 	 */
 
 	assert((readTail > origReadTail) || (readTail == 0));
