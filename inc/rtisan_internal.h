@@ -1,9 +1,7 @@
 #ifndef __RTISAN_INTERNAL_H
 #define __RTISAN_INTERNAL_H
 
-#define STM32F303
-
-#if defined(STM32F303)
+#if defined(STM32F303xC)
 #define STM32F30X
 #include <stm32f303xc.h>
 #include <core_cm4.h>
