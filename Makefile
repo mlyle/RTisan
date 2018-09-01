@@ -10,7 +10,9 @@ endif
 
 INC :=
 INC += inc
+INC += usb
 INC += libs/inc/stm32f3xx
+INC += libs/inc/usb
 INC += libs/inc/cmsis
 INC += /home/mlyle/newlib/lib/newlib-nano/arm-none-eabi/include/
 INC += tools/gcc-arm-none-eabi-6-2017-q2-update/lib/gcc/arm-none-eabi/6.3.1/include/
@@ -19,6 +21,8 @@ BUILD_DIR := build
 OPENLAGER_LOADER_SRC := $(wildcard loader/*.c)
 
 SRC := $(wildcard *.c)
+SRC += $(wildcard usb/*.c)
+SRC += $(wildcard libs/src/usb/*.c)
 OBJ := $(patsubst %.c,build/%.o,$(SRC))
 
 OBJ_FORCE :=

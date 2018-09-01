@@ -11,9 +11,10 @@
 #include "systick_handler.h"
 
 #define FPU_IRQn 9
-
+#if 0
 const void *_interrupt_vectors[FPU_IRQn] __attribute((section(".interrupt_vectors"))) = {
 };
+#endif
 
 const DIOInitTag_t leds[8] = {
 	GPIOE_DIO(8) | INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
@@ -25,6 +26,34 @@ const DIOInitTag_t leds[8] = {
 	GPIOE_DIO(14) | INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
 	GPIOE_DIO(15) | INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
 };
+
+/* Begin interim USB stuff */
+#include "usbd_core.h"
+#include "usbd_desc.h"
+#include "usbd_cdc.h"
+#include "usbd_cdc_interface.h"
+USBD_HandleTypeDef hUSBDDevice;
+
+void EnableInterrupt(int irqn)
+{
+	int idx = irqn >> 5;
+	uint32_t bit = 1 << (irqn & 0x1f);
+
+	//	NVIC->IP[irqn] = ;
+	NVIC->ISER[idx] = bit;
+}
+
+static void USB_LP_IRQHandler(void)
+{
+	extern PCD_HandleTypeDef hpcd;
+	HAL_PCD_IRQHandler(&hpcd);
+}
+
+const void *interrupt_vectors[] __attribute((section(".interrupt_vectors"))) =
+{
+	[USB_LP_CAN_RX0_IRQn] = USB_LP_IRQHandler,
+};
+/* End interim USB stuff */
 
 RTLock_t lock;
 
@@ -39,25 +68,25 @@ void idletask(void *unused)
 
 void othertask(void *ctx)
 {
-	printf("Task start, %p\n", ctx);
+	printf("Task start, %p\r\n", ctx);
 	while (true) {
 		if (((uintptr_t) ctx) == 128) {
 			RTLEDToggle(1);
 		}
 
-		printf("%02d Pre-lock %p %lu\n", RTGetTaskId(), ctx,
+		printf("%02d Pre-lock %p %lu\r\n", RTGetTaskId(), ctx,
 				systick_cnt);
 		RTLockLock(lock);
-		printf("%02d Presleep %p %lu\n", RTGetTaskId(), ctx,
+		printf("%02d Presleep %p %lu\r\n", RTGetTaskId(), ctx,
 				systick_cnt);
 		RTSleep((uintptr_t) ctx);
-		printf("%02d Preunlck %p %lu\n", RTGetTaskId(), ctx,
+		printf("%02d Preunlck %p %lu\r\n", RTGetTaskId(), ctx,
 				systick_cnt);
 		RTLockUnlock(lock);
-		printf("%02d Preslp2  %p %lu\n", RTGetTaskId(), ctx,
+		printf("%02d Preslp2  %p %lu\r\n", RTGetTaskId(), ctx,
 				systick_cnt);
 		RTSleep((uintptr_t) ctx);
-		printf("%02d Postall  %p %lu\n", RTGetTaskId(), ctx,
+		printf("%02d Postall  %p %lu\r\n", RTGetTaskId(), ctx,
 				systick_cnt);
 	}
 }
@@ -71,8 +100,26 @@ int main() {
 	RTLEDSet(0, true);
 	RTLEDSet(2, true);
 
-	printf("Initial startup, initing heap\n");
+	DIOInit(GPIOA_DIO(11) |
+			INIT_DIO_ALTFUNC_OUT(DIO_PULL_NONE, DIO_DRIVE_STRONG, false, 14));
+	DIOInit(GPIOA_DIO(12) |
+			INIT_DIO_ALTFUNC_OUT(DIO_PULL_NONE, DIO_DRIVE_STRONG, false, 14));
+
 	RTHeapInit();
+
+	EnableInterrupt(USB_LP_CAN_RX0_IRQn);
+
+	/* Init Device Library */
+	USBD_Init(&hUSBDDevice, &VCP_Desc, 0);
+
+	/* Add Supported Class */
+	USBD_RegisterClass(&hUSBDDevice, &USBD_CDC);
+
+	/* Add CDC Interface Class */
+	USBD_CDC_RegisterInterface(&hUSBDDevice, &USBD_CDC_fops);
+
+	/* Start Device Process */
+	USBD_Start(&hUSBDDevice);
 
 	printf("Initializing tasks\n");
 
