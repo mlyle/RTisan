@@ -50,8 +50,9 @@
 #include "usbd_cdc.h" 
 #include "usbd_cdc_interface.h"
 
-#include "rtisan.h"
-#include "rtisan_circqueue.h"
+#include <rtisan.h>
+#include <rtisan_circqueue.h>
+#include <rtisan_stream.h>
 
 #include <stdbool.h>
 
@@ -84,15 +85,14 @@ static uint8_t UserRxBuffer[APP_RX_DATA_SIZE];/* Received Data over USB are stor
 /* USB handler declaration */
 extern USBD_HandleTypeDef  hUSBDDevice;
 
-static RTCircQueue_t txCircQueue;
-static RTLock_t txLock;
-
 /* Private function prototypes -----------------------------------------------*/
 static int8_t CDC_Itf_Init     (void);
 static int8_t CDC_Itf_DeInit   (void);
 static int8_t CDC_Itf_Control  (uint8_t cmd, uint8_t* pbuf, uint16_t length);
 static int8_t CDC_Itf_Receive  (uint8_t* pbuf, uint32_t *Len);
 static int8_t CDC_Itf_TxDone   (void);
+
+static void CDC_TXBegin(RTStream_t stream, void *ctx);
 
 USBD_CDC_ItfTypeDef USBD_CDC_fops = 
 {
@@ -105,6 +105,9 @@ USBD_CDC_ItfTypeDef USBD_CDC_fops =
 
 /* Private functions ---------------------------------------------------------*/
 
+/* XXX */
+extern RTStream_t cdcStream;
+
 /**
   * @brief  CDC_Itf_Init
   *         Initializes the CDC media low layer
@@ -113,15 +116,12 @@ USBD_CDC_ItfTypeDef USBD_CDC_fops =
   */
 static int8_t CDC_Itf_Init(void)
 {
-  /*##-5- Set Application Buffers ############################################*/
   USBD_CDC_SetRxBuffer(&hUSBDDevice, UserRxBuffer);
-#if 0
-  USBD_CDC_SetTxBuffer(&hUSBDDevice, (uint8_t*)"First", 5);
-  USBD_CDC_TransmitPacket(&hUSBDDevice);
-#endif
 
-  txLock = RTLockCreate();
-  txCircQueue = RTCQCreate(1, APP_TX_DATA_SIZE);
+  RTStreamSetTXCallback(cdcStream, CDC_TXBegin, NULL);
+  CDC_TXBegin(NULL, NULL);
+
+  /* XXX Make safe with startup */
 
   return (USBD_OK);
 }
@@ -129,12 +129,12 @@ static int8_t CDC_Itf_Init(void)
 static void CDC_StartTx(bool finished)
 {
 	static volatile int inProg = 0;
-	static uint16_t numBytes = 0;
+	static int numBytes = 0;
 
 	/* XXX safety */
 	if (finished) {
 		if (numBytes) {
-			RTCQReadDoneMulti(txCircQueue, numBytes);
+			RTStreamZeroCopyTXDone(cdcStream, numBytes);
 			numBytes = 0;
 		}
 
@@ -143,7 +143,7 @@ static void CDC_StartTx(bool finished)
 		return;
 	}
 
-	void *toXmit = RTCQReadPos(txCircQueue, &numBytes, NULL);
+	const char *toXmit = RTStreamZeroCopyTXPos(cdcStream, &numBytes);
 
 	/* XXX cork */
 	/* XXX handles */
@@ -155,9 +155,17 @@ static void CDC_StartTx(bool finished)
 			numBytes = 64;
 		}
 
-		USBD_CDC_SetTxBuffer(&hUSBDDevice, toXmit, numBytes);
+		USBD_CDC_SetTxBuffer(&hUSBDDevice, (const uint8_t *) toXmit,
+				numBytes);
 		USBD_CDC_TransmitPacket(&hUSBDDevice);
 	}
+}
+
+static void CDC_TXBegin(RTStream_t stream, void *ctx)
+{
+	(void) stream; (void) ctx;
+
+	CDC_StartTx(false);
 }
 
 static int8_t CDC_Itf_TxDone   (void)
@@ -165,27 +173,6 @@ static int8_t CDC_Itf_TxDone   (void)
     CDC_StartTx(true);
 
     return (USBD_OK);
-}
-
-int CDC_Xmit(const char *buf, int len)
-{
-	/* XXX async / unsafe */
-	if (!txCircQueue) {
-		return -1;
-	}
-
-	RTLockLock(txLock);
-
-	/* XXX mechanism for blocking */
-	int numPut = RTCQWrite(txCircQueue, buf, len);
-
-	if (numPut) {
-		CDC_StartTx(false);
-	}
-
-	RTLockUnlock(txLock);
-
-	return numPut;
 }
 
 /**

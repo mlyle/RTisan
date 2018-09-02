@@ -1,7 +1,7 @@
 #ifndef __RTISAN_DIO_H
 #define __RTISAN_DIO_H
 
-#include "rtisan_internal.h"
+#include <rtisan_internal.h>
 #include <stdint.h>
 #include <stdbool.h>
 

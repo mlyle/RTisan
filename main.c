@@ -6,9 +6,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "rtisan.h"
-#include "rtisan_led.h"
-#include "systick_handler.h"
+#include <rtisan.h>
+#include <rtisan_led.h>
+#include <systick_handler.h>
+#include <rtisan_stream.h>
 
 #define FPU_IRQn 9
 #if 0
@@ -33,6 +34,8 @@ const DIOInitTag_t leds[8] = {
 #include "usbd_cdc.h"
 #include "usbd_cdc_interface.h"
 USBD_HandleTypeDef hUSBDDevice;
+
+RTStream_t cdcStream;
 
 void EnableInterrupt(int irqn)
 {
@@ -107,7 +110,10 @@ int main() {
 
 	RTHeapInit();
 
+	/* XXX begin USB chunk 2 */
 	EnableInterrupt(USB_LP_CAN_RX0_IRQn);
+
+	cdcStream = RTStreamCreate(1, 128, 128);
 
 	/* Init Device Library */
 	USBD_Init(&hUSBDDevice, &VCP_Desc, 0);
@@ -120,6 +126,8 @@ int main() {
 
 	/* Start Device Process */
 	USBD_Start(&hUSBDDevice);
+
+	/* XXX end USB chunk 2 */
 
 	printf("Initializing tasks\n");
 

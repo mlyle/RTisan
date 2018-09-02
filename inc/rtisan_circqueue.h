@@ -31,7 +31,7 @@ RTCircQueue_t RTCQCreate(uint16_t elemSize, uint16_t numElem);
  * freed up more space.  (Includes wraparound/non-contig elems).
  * @returns The position for new data to be written to (of size elemSize).
  */
-void *RTCQWritePos(RTCircQueue_t q, uint16_t *contig, uint16_t *avail);
+void *RTCQWritePos(RTCircQueue_t q, int *contig, int *avail);
 
 /** Makes multiple elements available to the reader.  Amt is expected to be
  * equal or less to an 'avail' returned by RTCQcur_write_pos.
@@ -40,7 +40,7 @@ void *RTCQWritePos(RTCircQueue_t q, uint16_t *contig, uint16_t *avail);
  * @param[in] amt The number of bytes we've filled in for the reader.
  * @returns 0 if the write succeeded
  */
-int RTCQWriteAdvance(RTCircQueue_t q, uint16_t amt);
+int RTCQWriteAdvance(RTCircQueue_t q, int amt);
 
 /** Makes the current block of data available to the reader and advances write pos.
  * This may fail if the queue contain num_elems -1 elements, in which case the
@@ -65,7 +65,7 @@ int RTCQWriteAdvanceOne(RTCircQueue_t q);
  * without any further writer activity.
  * @returns pointer to the data, or NULL if the queue is empty.
  */
-void *RTCQReadPos(RTCircQueue_t q, uint16_t *contig, uint16_t *avail);
+void *RTCQReadPos(RTCircQueue_t q, int *contig, uint16_t *avail);
 
 /** Empties all elements from the queue. */
 void RTCQClear(RTCircQueue_t q);
@@ -85,10 +85,10 @@ void RTCQReadDone(RTCircQueue_t q);
  * @param[in] q Handle to the circula queue.
  * @param[in] num Number of elements to release.
  */
-void RTCQReadDoneMulti(RTCircQueue_t q, uint16_t num);
+void RTCQReadDoneMulti(RTCircQueue_t q, int num);
 
-uint16_t RTCQWrite(RTCircQueue_t q, const void *buf, uint16_t num);
+int RTCQWrite(RTCircQueue_t q, const void *buf, int num);
 
-uint16_t RTCQRead(RTCircQueue_t q, void *buf, uint16_t num);
+int RTCQRead(RTCircQueue_t q, void *buf, int num);
 
 #endif /* __RTISAN_CIRCQUEUE_H */
