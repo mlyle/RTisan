@@ -61,8 +61,8 @@ RTCircQueue_t RTCQCreate(uint16_t elemSize, uint16_t numElem) {
  * freed up more space.  (Includes wraparound/non-contig elems).
  * @returns The position for new data to be written to (of size elemSize).
  */
-void *RTCQWritePos(RTCircQueue_t q, uint16_t *contig,
-		uint16_t *avail) {
+void *RTCQWritePos(RTCircQueue_t q, int *contig,
+		int *avail) {
 	void *contents = q->contents;
 	uint16_t wrHead = q->writeHead;
 	uint16_t rdTail = q->readTail;
@@ -125,7 +125,7 @@ static inline uint16_t NextPos(uint16_t numPos, uint16_t currentPos) {
  * @param[in] amt The number of bytes we've filled in for the reader.
  * @returns 0 if the write succeeded
  */
-int RTCQWriteAdvance(RTCircQueue_t q, uint16_t amt) {
+int RTCQWriteAdvance(RTCircQueue_t q, int amt) {
 	if (amt == 0) {
 		return 0;
 	}
@@ -183,7 +183,7 @@ int RTCQWriteAdvanceOne(RTCircQueue_t q) {
  * without any further writer activity.
  * @returns pointer to the data, or NULL if the queue is empty.
  */
-void *RTCQReadPos(RTCircQueue_t q, uint16_t *contig, uint16_t *avail) {
+void *RTCQReadPos(RTCircQueue_t q, int *contig, uint16_t *avail) {
 	uint16_t readTail = q->readTail;
 	uint16_t wrHead = q->writeHead;
 
@@ -251,7 +251,7 @@ void RTCQReadDone(RTCircQueue_t q) {
  * @param[in] q Handle to the circula queue.
  * @param[in] num Number of elements to release.
  */
-void RTCQReadDoneMulti(RTCircQueue_t q, uint16_t num) {
+void RTCQReadDoneMulti(RTCircQueue_t q, int num) {
 	if (num == 0) {
 		return;
 	}
@@ -280,9 +280,9 @@ void RTCQReadDoneMulti(RTCircQueue_t q, uint16_t num) {
 	q->readTail = readTail;
 }
 
-uint16_t RTCQWrite(RTCircQueue_t q, const void *buf, uint16_t num) {
-	uint16_t total_put = 0;
-	uint16_t putThisTime = 0;
+int RTCQWrite(RTCircQueue_t q, const void *buf, int num) {
+	int total_put = 0;
+	int putThisTime = 0;
 
 	const void *bufPos = buf;
 
@@ -309,9 +309,9 @@ uint16_t RTCQWrite(RTCircQueue_t q, const void *buf, uint16_t num) {
 	return total_put;
 }
 
-uint16_t RTCQRead(RTCircQueue_t q, void *buf, uint16_t num) {
-	uint16_t totalRead = 0;
-	uint16_t readThisTime = 0;
+int RTCQRead(RTCircQueue_t q, void *buf, int num) {
+	int totalRead = 0;
+	int readThisTime = 0;
 
 	void *bufPos = buf;
 
