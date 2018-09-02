@@ -142,6 +142,18 @@ static void IncrementWakes(RTTask_t task)
 					bInfo.val32));
 }
 
+void RTWake(TaskId_t task)
+{
+	assert(task > 0);
+	assert(task <= TASK_MAX);
+
+	RTTask_t t = taskTable[task];
+
+	assert(t);
+
+	IncrementWakes(t);
+}
+
 TaskId_t RTTaskToRun(void)
 {
 	static uint32_t lastSystick;
@@ -212,7 +224,12 @@ WakeCounter_t RTGetWakeCount(void)
 
 void RTGo(void)
 {
+	RTEnableSystick();
+
+#if 0
 	SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
+#endif
+	while (1);
 }
 
 void RTWait(WakeCounter_t wakeThreshold)
@@ -383,7 +400,7 @@ void RTLockUnlock(RTLock_t lock)
 		if (task != ourTask) {
 			/* Can result in extra wakes */
 			if (task) {
-				IncrementWakes(taskTable[task]);
+				RTWake(task);
 
 				wokeSomeone = true;
 			}

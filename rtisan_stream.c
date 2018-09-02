@@ -15,6 +15,7 @@ struct RTStream_s {
 
 	RTStreamWakeHandler_t * volatile txCb;
 	void * volatile txCtx;
+	volatile TaskId_t waitingForTx;
 
 	RTLock_t lock;
 };
@@ -56,11 +57,22 @@ RTStream_t RTStreamCreate(int elemSize, int txBufSize, int rxBufSize)
 	return stream;
 }
 
+static inline void WakeTX(RTStream_t stream)
+{
+	TaskId_t waiting = stream->waitingForTx;
+
+	if (waiting) {
+		RTWake(waiting);
+	}
+}
+
 int RTStreamGetTXChunk(RTStream_t stream, char *buf, int len)
 {
 	assert(stream->magic == RTSTREAM_MAGIC);
 
 	int retLen = RTCQRead(stream->txCircQueue, buf, len);
+	
+	WakeTX(stream);
 
 	return retLen;
 }
@@ -77,6 +89,8 @@ void RTStreamZeroCopyTXDone(RTStream_t stream, int numBytes)
 	assert(stream->magic == RTSTREAM_MAGIC);
 
 	RTCQReadDoneMulti(stream->txCircQueue, numBytes);
+
+	WakeTX(stream);
 }
 
 int RTStreamSetTXCallback(RTStream_t stream, RTStreamWakeHandler_t cb,
@@ -87,13 +101,19 @@ int RTStreamSetTXCallback(RTStream_t stream, RTStreamWakeHandler_t cb,
 	stream->txCtx = ctx;
 	stream->txCb = cb;
 
+	/* If someone has been waiting to transmit, they may not have
+	 * been able to wake the handler.  On the other hand, doing it
+	 * synchronously here is problematic.  Therefore wake them so
+	 * they can wake the transmitter.
+	 */
+	WakeTX(stream);
+
 	return 0;
 }
 
 int RTStreamSend(RTStream_t stream, const char *buf,
 		int len, bool block)
 {
-	block = false;		/* XXX */
 	assert(stream->magic == RTSTREAM_MAGIC);
 
 	int doneSoFar = 0;
@@ -101,24 +121,32 @@ int RTStreamSend(RTStream_t stream, const char *buf,
 	RTLockLock(stream->lock);
 
 	while (true) {
+		WakeCounter_t wc;
+
+		if (block) {
+			stream->waitingForTx = RTGetTaskId();
+
+			wc = RTGetWakeCount();
+		}
+
 		doneSoFar += RTCQWrite(stream->txCircQueue, buf + doneSoFar,
 				len - doneSoFar);
 
+		if (stream->txCb) {
+			stream->txCb(stream, stream->txCtx);
+		}
+	
 		if ((!block) || (doneSoFar >= len)) {
+			stream->waitingForTx = 0;
+
 			break;
 		}
 
-		/* XXX block / sleep / wakeup */
+		RTWait(wc + 1);
 	}
 
 	RTLockUnlock(stream->lock);
 
-	if (doneSoFar) {
-		if (stream->txCb) {
-			stream->txCb(stream, stream->txCtx);
-		}
-	}
-	
 	return doneSoFar;
 }
 

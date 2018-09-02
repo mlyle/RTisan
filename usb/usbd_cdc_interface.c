@@ -119,7 +119,7 @@ static int8_t CDC_Itf_Init(void)
   USBD_CDC_SetRxBuffer(&hUSBDDevice, UserRxBuffer);
 
   RTStreamSetTXCallback(cdcStream, CDC_TXBegin, NULL);
-  CDC_TXBegin(NULL, NULL);
+//  CDC_TXBegin(NULL, NULL);
 
   /* XXX Make safe with startup */
 

@@ -133,15 +133,12 @@ int main() {
 
 	RTTasksInit();
 
-	printf("Enabling systick\n");
-	RTEnableSystick();
-
 	lock = RTLockCreate();
 
 	RTTaskCreate(1, idletask, NULL);
 	RTTaskCreate(10, othertask, (void *) 3);
 	RTTaskCreate(11, othertask, (void *) 7);
-	RTTaskCreate(12, othertask, (void *) 128);
+	RTTaskCreate(12, othertask, (void *) 1000);
 
 	printf("Waiting from \"main task\"\n");
 	RTGo();
