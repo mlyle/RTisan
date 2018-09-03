@@ -11,18 +11,54 @@ endif
 INC :=
 INC += inc
 INC += usb
+BUILD_DIR := build
+
+CFLAGS :=
+CFLAGS += -fomit-frame-pointer -Wall -g3 #-Og
+LIBS :=
+LDFLAGS :=
+
+SRC := $(wildcard *.c)
+
+ifeq (a,b)
+### Linux specific stuff here ###
+SRC += $(wildcard linux/*.c)
+INC += linux/inc
+else
+### EMBEDDED SPECIFIC STUFF HERE ###
+CC := $(ARM_SDK_PREFIX)gcc
+LDFLAGS += -nostartfiles -Wl,-static -Wl,--warn-common -nostdlib
+LDFLAGS += -L/home/mlyle/newlib/lib/newlib-nano/arm-none-eabi/lib/thumb/v7-m
+LDFLAGS += -Ltools/gcc-arm-none-eabi-6-2017-q2-update/lib/gcc/arm-none-eabi/6.3.1/thumb/v6-m/
+LDFLAGS += -Wl,--fatal-warnings -Wl,--gc-sections
+LDFLAGS += -Tmemory.ld -Ttasker.ld
+
+LIBS += -lc -lgcc
+
 INC += libs/inc/stm32f3xx
 INC += libs/inc/usb
 INC += libs/inc/cmsis
 INC += /home/mlyle/newlib/lib/newlib-nano/arm-none-eabi/include/
 INC += tools/gcc-arm-none-eabi-6-2017-q2-update/lib/gcc/arm-none-eabi/6.3.1/include/
-BUILD_DIR := build
+INC += arm/inc
 
-OPENLAGER_LOADER_SRC := $(wildcard loader/*.c)
-
-SRC := $(wildcard *.c)
+SRC += $(wildcard arm/*.c)
 SRC += $(wildcard usb/*.c)
 SRC += $(wildcard libs/src/usb/*.c)
+
+CFLAGS += -nostdinc
+CFLAGS += -mcpu=cortex-m4 -mthumb -fdata-sections -ffunction-sections
+CFLAGS += -DSTM32F303xC
+CFLAGS += -DHSE_VALUE=8000000
+### END EMBEDDED SPECIFIC STUFF ###
+endif
+
+CC := ccache $(CC)
+
+APPPATH := app
+#INC += app
+#include $(APPPATH)/app.mk
+
 OBJ := $(patsubst %.c,build/%.o,$(SRC))
 
 OBJ_FORCE :=
@@ -31,37 +67,15 @@ ifeq ("$(STACK_USAGE)","")
     CCACHE_BIN := $(shell which ccache 2>/dev/null)
 endif
 
-CC := $(CCACHE_BIN) $(ARM_SDK_PREFIX)gcc
-
 CPPFLAGS += $(patsubst %,-I%,$(INC))
-#CPPFLAGS += -DSTM32F411xE -DUSE_STDPERIPH_DRIVER
-
-CFLAGS := -nostdinc
-CFLAGS += -mcpu=cortex-m4 -mthumb -fdata-sections -ffunction-sections
-CFLAGS += -fomit-frame-pointer -Wall -g3 #-Og
-CFLAGS += -DSTM32F303xC
-
 CFLAGS += $(CPPFLAGS)
 
 ifneq ("$(STACK_USAGE)","")
     OBJ_FORCE := FORCE
     CFLAGS += -fstack-usage
-
 else
     CFLAGS += -Werror
 endif
-
-CFLAGS += -DHSE_VALUE=8000000
-
-LDFLAGS := -nostartfiles -Wl,-static -Wl,--warn-common
-
-LDFLAGS += -nostdlib
-LDFLAGS += -L/home/mlyle/newlib/lib/newlib-nano/arm-none-eabi/lib/thumb/v7-m
-LDFLAGS += -Ltools/gcc-arm-none-eabi-6-2017-q2-update/lib/gcc/arm-none-eabi/6.3.1/thumb/v6-m/
-LDFLAGS += -Wl,--fatal-warnings -Wl,--gc-sections
-LDFLAGS += -Tmemory.ld -Ttasker.ld
-
-LIBS := -lc -lgcc
 
 all: build/tasker.bin
 

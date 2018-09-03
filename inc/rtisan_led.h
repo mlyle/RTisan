@@ -1,6 +1,7 @@
 #ifndef __RTISAN_LED_H
 #define __RTISAN_LED_H
 
+#include <stdbool.h>
 #include <rtisan_dio.h>
 
 void RTLEDInit(int numLed, const DIOInitTag_t *leds);

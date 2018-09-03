@@ -51,6 +51,40 @@ void RTTasksInit()
 {
 }
 
+static inline int GetTaskAllocSize()
+{
+	return sizeof(struct RTTask_s) + PROC_STACK_SIZE;
+}
+
+void RTTaskCreateImpl(RTTask_t taskRec, void (*task)(void *), void *arg)
+{
+	void *endStack = ((void *) taskRec) +
+		GetTaskAllocSize();
+
+	taskRec->sp = endStack;
+	/* setup initial stack frame */
+	*(--taskRec->sp) = 0x21000000; /* Initial PSR */
+	*(--taskRec->sp) = (uint32_t) task & THUMB_PC_MASK;
+	*(--taskRec->sp) = 0;           /* lr */
+	*(--taskRec->sp) = 0;           /* r12 */
+	*(--taskRec->sp) = 0;           /* r3  */
+	*(--taskRec->sp) = 0;           /* r2  */
+	*(--taskRec->sp) = 0;           /* r1  */
+	*(--taskRec->sp) = (uint32_t) arg; /* r0  */
+
+	*(--taskRec->sp) = EXC_RET_THREAD;  /* ret vec  */
+	*(--taskRec->sp) = 0;           /* r11  */
+	*(--taskRec->sp) = 0;           /* r10  */
+	*(--taskRec->sp) = 0;           /* r9   */
+	*(--taskRec->sp) = 0;           /* r8   */
+	*(--taskRec->sp) = 0;           /* r7   */
+	*(--taskRec->sp) = 0;           /* r6   */
+	*(--taskRec->sp) = 0;           /* r5   */
+	*(--taskRec->sp) = 0;           /* r4   */
+
+	taskRec->canary = 5678;
+}
+
 RTTask_t RTTaskCreate(RTPrio_t prio, void (*task)(void *), void *arg)
 {
 	int i = 1;
@@ -60,38 +94,13 @@ RTTask_t RTTaskCreate(RTPrio_t prio, void (*task)(void *), void *arg)
 			continue;
 		}
 
-		taskTable[i] = malloc(
-			sizeof(struct RTTask_s) + PROC_STACK_SIZE);
-
-		void *endStack = ((void *) taskTable[i]) +
-			sizeof(struct RTTask_s) + PROC_STACK_SIZE;
-
-		taskTable[i]->sp = endStack;
+		taskTable[i] = malloc(GetTaskAllocSize());
 		taskTable[i]->priority = prio;
 		taskTable[i]->blockingInfo.val32 = 0;
 		taskTable[i]->ticksCreateWakes = false;
 
-		/* setup initial stack frame */
-		*(--taskTable[i]->sp) = 0x21000000; /* Initial PSR */
-		*(--taskTable[i]->sp) = (uint32_t) task & THUMB_PC_MASK;
-		*(--taskTable[i]->sp) = 0;           /* lr */
-		*(--taskTable[i]->sp) = 0;           /* r12 */
-		*(--taskTable[i]->sp) = 0;           /* r3  */
-		*(--taskTable[i]->sp) = 0;           /* r2  */
-		*(--taskTable[i]->sp) = 0;           /* r1  */
-		*(--taskTable[i]->sp) = (uint32_t) arg; /* r0  */
+		RTTaskCreateImpl(taskTable[i], task, arg);
 
-		*(--taskTable[i]->sp) = EXC_RET_THREAD;  /* ret vec  */
-		*(--taskTable[i]->sp) = 0;           /* r11  */
-		*(--taskTable[i]->sp) = 0;           /* r10  */
-		*(--taskTable[i]->sp) = 0;           /* r9   */
-		*(--taskTable[i]->sp) = 0;           /* r8   */
-		*(--taskTable[i]->sp) = 0;           /* r7   */
-		*(--taskTable[i]->sp) = 0;           /* r6   */
-		*(--taskTable[i]->sp) = 0;           /* r5   */
-		*(--taskTable[i]->sp) = 0;           /* r4   */
-
-		taskTable[i]->canary = 5678;
 		return taskTable[i];
         }
 

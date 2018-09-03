@@ -11,13 +11,8 @@
 #include <systick_handler.h>
 #include <rtisan_stream.h>
 
-#define FPU_IRQn 9
-#if 0
-const void *_interrupt_vectors[FPU_IRQn] __attribute((section(".interrupt_vectors"))) = {
-};
-#endif
-
 const DIOInitTag_t leds[8] = {
+#ifndef __linux__
 	GPIOE_DIO(8) | INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
 	GPIOE_DIO(9) | INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
 	GPIOE_DIO(10) | INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
@@ -26,16 +21,18 @@ const DIOInitTag_t leds[8] = {
 	GPIOE_DIO(13) | INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
 	GPIOE_DIO(14) | INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
 	GPIOE_DIO(15) | INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
+#endif
 };
 
+RTStream_t cdcStream;
+
 /* Begin interim USB stuff */
+#ifndef __linux__
 #include "usbd_core.h"
 #include "usbd_desc.h"
 #include "usbd_cdc.h"
 #include "usbd_cdc_interface.h"
 USBD_HandleTypeDef hUSBDDevice;
-
-RTStream_t cdcStream;
 
 void EnableInterrupt(int irqn)
 {
@@ -56,6 +53,9 @@ const void *interrupt_vectors[] __attribute((section(".interrupt_vectors"))) =
 {
 	[USB_LP_CAN_RX0_IRQn] = USB_LP_IRQHandler,
 };
+
+#endif
+
 /* End interim USB stuff */
 
 RTLock_t lock;
@@ -78,19 +78,19 @@ void othertask(void *ctx)
 		}
 
 		printf("%02d Pre-lock %p %lu\r\n", RTGetTaskId(), ctx,
-				systick_cnt);
+				(unsigned long) systick_cnt);
 		RTLockLock(lock);
 		printf("%02d Presleep %p %lu\r\n", RTGetTaskId(), ctx,
-				systick_cnt);
+				(unsigned long) systick_cnt);
 		RTSleep((uintptr_t) ctx);
 		printf("%02d Preunlck %p %lu\r\n", RTGetTaskId(), ctx,
-				systick_cnt);
+				(unsigned long) systick_cnt);
 		RTLockUnlock(lock);
 		printf("%02d Preslp2  %p %lu\r\n", RTGetTaskId(), ctx,
-				systick_cnt);
+				(unsigned long) systick_cnt);
 		RTSleep((uintptr_t) ctx);
 		printf("%02d Postall  %p %lu\r\n", RTGetTaskId(), ctx,
-				systick_cnt);
+				(unsigned long) systick_cnt);
 	}
 }
 
@@ -98,22 +98,22 @@ void ClockConfiguration(void); /* XXX */
 
 int main() {
 	ClockConfiguration();
+	RTHeapInit();
 
 	RTLEDInit(8, leds);
 	RTLEDSet(0, true);
 	RTLEDSet(2, true);
 
+	cdcStream = RTStreamCreate(1, 128, 128);
+
+#ifndef __linux__
+	/* XXX begin USB chunk 2 */
 	DIOInit(GPIOA_DIO(11) |
 			INIT_DIO_ALTFUNC_OUT(DIO_PULL_NONE, DIO_DRIVE_STRONG, false, 14));
 	DIOInit(GPIOA_DIO(12) |
 			INIT_DIO_ALTFUNC_OUT(DIO_PULL_NONE, DIO_DRIVE_STRONG, false, 14));
 
-	RTHeapInit();
-
-	/* XXX begin USB chunk 2 */
 	EnableInterrupt(USB_LP_CAN_RX0_IRQn);
-
-	cdcStream = RTStreamCreate(1, 128, 128);
 
 	/* Init Device Library */
 	USBD_Init(&hUSBDDevice, &VCP_Desc, 0);
@@ -126,8 +126,9 @@ int main() {
 
 	/* Start Device Process */
 	USBD_Start(&hUSBDDevice);
-
 	/* XXX end USB chunk 2 */
+#endif
+
 
 	printf("Initializing tasks\n");
 
