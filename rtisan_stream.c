@@ -20,6 +20,8 @@ struct RTStream_s {
 	RTCircQueue_t txCircQueue;
 	RTCircQueue_t rxCircQueue;
 
+	bool blockUntilCallbacks;
+
 	RTStreamWakeHandler_t * volatile txCb;
 	void * volatile txCtx;
 	volatile TaskId_t waitingForTx;
@@ -31,7 +33,8 @@ struct RTStream_s {
 	RTLock_t rxLock;
 };
 
-RTStream_t RTStreamCreate(int elemSize, int txBufSize, int rxBufSize)
+RTStream_t RTStreamCreate(int elemSize, int txBufSize, int rxBufSize,
+		bool blockUntilCallbacks)
 {
 	assert(elemSize >= 1);
 	assert(txBufSize || rxBufSize);
@@ -42,6 +45,7 @@ RTStream_t RTStreamCreate(int elemSize, int txBufSize, int rxBufSize)
 
 	stream->magic = RTSTREAM_MAGIC;
 	stream->elemSize = elemSize;
+	stream->blockUntilCallbacks = true;
 
 	if (txBufSize) {
 		stream->txLock = RTLockCreate();
@@ -151,8 +155,10 @@ int RTStreamSend(RTStream_t stream, const char *buf,
 			wc = RTGetWakeCount();
 		}
 
-		doneSoFar += RTCQWrite(stream->txCircQueue, buf + doneSoFar,
-				len - doneSoFar);
+		if ((!stream->blockUntilCallbacks) || (stream->txCb)) {
+			doneSoFar += RTCQWrite(stream->txCircQueue, buf + doneSoFar,
+					len - doneSoFar);
+		}
 
 		if (stream->txCb) {
 			stream->txCb(stream, stream->txCtx);
@@ -194,10 +200,6 @@ int RTStreamReceive(RTStream_t stream, char *buf,
 		doneSoFar += RTCQRead(stream->rxCircQueue, buf + doneSoFar,
 				len - doneSoFar);
 
-		if (stream->rxCb) {
-			stream->rxCb(stream, stream->rxCtx);
-		}
-
 		if ((!block) ||
 				(doneSoFar >= len) ||
 				((!all) && doneSoFar)) {
@@ -230,7 +232,7 @@ int RTStreamGetRXAvailable(RTStream_t stream)
 
 	int ret;
 
-	RTStreamZeroCopyRXPos(stream, &ret);
+	RTCQWritePos(stream->rxCircQueue, NULL, &ret);
 
 	return ret;
 }

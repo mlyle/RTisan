@@ -10,7 +10,9 @@ typedef struct RTStream_s *RTStream_t;
 typedef void (RTStreamWakeHandler_t)(RTStream_t stream, void *ctx);
 
 
-RTStream_t RTStreamCreate(int elemSize, int txBufSize, int rxBufSize);
+RTStream_t RTStreamCreate(int elemSize, int txBufSize, int rxBufSize,
+		bool blockUntilCallbacks);
+
 int RTStreamSend(RTStream_t stream, const char *buf,
 		int len, bool block);
 int RTStreamReceive(RTStream_t stream, char *buf,

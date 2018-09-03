@@ -93,6 +93,7 @@ static int8_t CDC_Itf_Receive  (uint8_t* pbuf, uint32_t *Len);
 static int8_t CDC_Itf_TxDone   (void);
 
 static void CDC_TXBegin(RTStream_t stream, void *ctx);
+static void CDC_RXBegin(RTStream_t stream, void *ctx);
 
 USBD_CDC_ItfTypeDef USBD_CDC_fops = 
 {
@@ -119,7 +120,7 @@ static int8_t CDC_Itf_Init(void)
   USBD_CDC_SetRxBuffer(&hUSBDDevice, UserRxBuffer);
 
   RTStreamSetTXCallback(cdcStream, CDC_TXBegin, NULL);
-//  CDC_TXBegin(NULL, NULL);
+  RTStreamSetRXCallback(cdcStream, CDC_RXBegin, NULL);
 
   /* XXX Make safe with startup */
 
@@ -159,6 +160,31 @@ static void CDC_StartTx(bool finished)
 				numBytes);
 		USBD_CDC_TransmitPacket(&hUSBDDevice);
 	}
+}
+
+static void CDC_StartRx(bool finished)
+{
+	static volatile int inProg;
+
+	if (finished) {
+		inProg = 0;
+	} else if (inProg) {
+		return;
+	}
+
+	int recvSpace = RTStreamGetRXAvailable(cdcStream);
+
+	if (recvSpace >= 64) {
+		inProg = 1;
+		USBD_CDC_ReceivePacket(&hUSBDDevice);
+	}
+}
+
+static void CDC_RXBegin(RTStream_t stream, void *ctx)
+{
+	(void) stream; (void) ctx;
+
+	CDC_StartRx(false);
 }
 
 static void CDC_TXBegin(RTStream_t stream, void *ctx)
@@ -245,8 +271,9 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
   */
 static int8_t CDC_Itf_Receive(uint8_t* Buf, uint32_t *Len)
 {
-  //HAL_UART_Transmit_DMA(&UartHandle, Buf, *Len);
-  USBD_CDC_ReceivePacket(&hUSBDDevice);  /* If we ate this data and are done with it*/
+  RTStreamDoRXChunk(cdcStream, (char *) Buf, *Len);
+  CDC_StartRx(true);
+
   return (USBD_OK);
 }
 

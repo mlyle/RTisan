@@ -16,11 +16,24 @@ static int stdout_impl(char c, FILE *ign)
 	return 0;
 }
 
+static int stdin_impl(FILE *ign)
+{
+	(void) ign;
+	char c;
+
+	RTStreamReceive(cdcStream, &c, sizeof(c), true, false);
+
+	return (unsigned char) c;
+}
+
 static FILE outFile =
 	FDEV_SETUP_STREAM(stdout_impl, NULL, NULL, _FDEV_SETUP_WRITE);
 
+static FILE inFile =
+	FDEV_SETUP_STREAM(NULL, stdin_impl, NULL, _FDEV_SETUP_READ);
+
 FILE * const __iob[] = {
-	NULL,
+	&inFile,
 
 	&outFile,
 	&outFile,

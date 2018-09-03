@@ -69,6 +69,31 @@ void idletask(void *unused)
 	while (true);
 }
 
+void factortask(void *ctx)
+{
+	printf("Task start, %p\r\n", ctx);
+	while (true) {
+		int r;
+
+		if (!scanf(" %d", &r)) {
+			getchar();
+			continue;
+		}
+
+		printf("%d:", r);
+
+		for (int i = 2; i <= r; i++) {
+			if (r % i == 0) {
+				r /= i;
+				printf(" %d", i--);
+			}
+		}
+
+		printf("\r\n");
+	}
+}
+
+#if 0
 void othertask(void *ctx)
 {
 	printf("Task start, %p\r\n", ctx);
@@ -93,6 +118,7 @@ void othertask(void *ctx)
 				(unsigned long) systick_cnt);
 	}
 }
+#endif
 
 void ClockConfiguration(void); /* XXX */
 
@@ -104,7 +130,7 @@ int main() {
 	RTLEDSet(0, true);
 	RTLEDSet(2, true);
 
-	cdcStream = RTStreamCreate(1, 128, 128);
+	cdcStream = RTStreamCreate(1, 129, 129, true);
 
 #ifndef __linux__
 	/* XXX begin USB chunk 2 */
@@ -129,18 +155,17 @@ int main() {
 	/* XXX end USB chunk 2 */
 #endif
 
-
-	printf("Initializing tasks\n");
-
 	RTTasksInit();
 
 	lock = RTLockCreate();
 
 	RTTaskCreate(1, idletask, NULL);
+#if 0
 	RTTaskCreate(10, othertask, (void *) 3);
 	RTTaskCreate(11, othertask, (void *) 7);
 	RTTaskCreate(12, othertask, (void *) 1000);
+#endif
+	RTTaskCreate(10, factortask, (void *) 3);
 
-	printf("Waiting from \"main task\"\n");
 	RTGo();
 }
