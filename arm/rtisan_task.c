@@ -289,6 +289,27 @@ static void RTTaskCreateImpl(RTTask_t taskRec, void (*task)(void *), void *arg)
 
 	taskRec->sp = endStack;
 	/* setup initial stack frame */
+
+#ifdef HAVE_FPU
+	*(--taskRec->sp) = FPU->FPDSCR; /* FPSCR: default values */
+	*(--taskRec->sp) = 0;           /* s15 */
+	*(--taskRec->sp) = 0;           /* s14 */
+	*(--taskRec->sp) = 0;           /* s13 */
+	*(--taskRec->sp) = 0;           /* s12 */
+	*(--taskRec->sp) = 0;           /* s11 */
+	*(--taskRec->sp) = 0;           /* s10 */
+	*(--taskRec->sp) = 0;           /* s9 */
+	*(--taskRec->sp) = 0;           /* s8 */
+	*(--taskRec->sp) = 0;           /* s7 */
+	*(--taskRec->sp) = 0;           /* s6 */
+	*(--taskRec->sp) = 0;           /* s5 */
+	*(--taskRec->sp) = 0;           /* s4 */
+	*(--taskRec->sp) = 0;           /* s3 */
+	*(--taskRec->sp) = 0;           /* s2 */
+	*(--taskRec->sp) = 0;           /* s1 */
+	*(--taskRec->sp) = 0;           /* s0 */
+#endif
+
 	*(--taskRec->sp) = 0x21000000; /* Initial PSR */
 	*(--taskRec->sp) = (uint32_t) task & THUMB_PC_MASK;
 	*(--taskRec->sp) = 0;           /* lr */
@@ -307,6 +328,25 @@ static void RTTaskCreateImpl(RTTask_t taskRec, void (*task)(void *), void *arg)
 	*(--taskRec->sp) = 0;           /* r6   */
 	*(--taskRec->sp) = 0;           /* r5   */
 	*(--taskRec->sp) = 0;           /* r4   */
+
+#ifdef HAVE_FPU
+	*(--taskRec->sp) = 0;           /* s31 */
+	*(--taskRec->sp) = 0;           /* s30 */
+	*(--taskRec->sp) = 0;           /* s29 */
+	*(--taskRec->sp) = 0;           /* s28 */
+	*(--taskRec->sp) = 0;           /* s27 */
+	*(--taskRec->sp) = 0;           /* s26 */
+	*(--taskRec->sp) = 0;           /* s25 */
+	*(--taskRec->sp) = 0;           /* s24 */
+	*(--taskRec->sp) = 0;           /* s23 */
+	*(--taskRec->sp) = 0;           /* s22 */
+	*(--taskRec->sp) = 0;           /* s21 */
+	*(--taskRec->sp) = 0;           /* s20 */
+	*(--taskRec->sp) = 0;           /* s19 */
+	*(--taskRec->sp) = 0;           /* s18 */
+	*(--taskRec->sp) = 0;           /* s17 */
+	*(--taskRec->sp) = 0;           /* s16 */
+#endif
 
 	taskRec->canary = 5678;
 }
@@ -343,6 +383,10 @@ static __attribute__((naked, noreturn)) void RTTaskSwitch()
 			"mov sp, r1\n\t"
 			"push {r4-r11, lr}\n\t"
 
+#ifdef HAVE_FPU
+			"vpush {s16-s31}\n\t"
+#endif
+
 			// Capture this stack value in R1
 			"mov r1, sp\n\t"
 
@@ -370,6 +414,9 @@ static __attribute__((naked, noreturn)) void RTTaskSwitch()
 			"mov sp, r0\n\t"
 
 			// Restore switched-to task registers
+#ifdef HAVE_FPU
+			"vpop {s16-s31}\n\t"
+#endif
 			"pop {r4-r11, lr}\n\t"
 
 			// Install current task stack value into PSP

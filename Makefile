@@ -39,8 +39,11 @@ else
 ### EMBEDDED SPECIFIC STUFF HERE ###
 CC := $(ARM_SDK_PREFIX)gcc
 LDFLAGS += -nostartfiles -Wl,-static -Wl,--warn-common -nostdlib
-LDFLAGS += -L/home/mlyle/newlib/lib/newlib-nano/arm-none-eabi/lib/thumb/v7-m
-LDFLAGS += -Ltools/gcc-arm-none-eabi-6-2017-q2-update/lib/gcc/arm-none-eabi/6.3.1/thumb/v6-m/
+#LDFLAGS += -L/home/mlyle/newlib/lib/newlib-nano/arm-none-eabi/lib/thumb/v7e-m/fpv4-sp/hard
+#LDFLAGS += -Ltools/gcc-arm-none-eabi-6-2017-q2-update/lib/gcc/arm-none-eabi/6.3.1/thumb/v7e-m/fpv4-sp/hard
+LDFLAGS += -L/home/mlyle/newlib/lib/newlib-nano/arm-none-eabi/lib/thumb/v7e-m
+LDFLAGS += -Ltools/gcc-arm-none-eabi-6-2017-q2-update/lib/gcc/arm-none-eabi/6.3.1/thumb/v7e-m
+
 LDFLAGS += -Wl,--fatal-warnings -Wl,--gc-sections
 LDFLAGS += -Tmemory.ld -Ttasker.ld
 
@@ -59,6 +62,7 @@ SRC += $(wildcard libs/src/usb/*.c)
 
 CFLAGS += -nostdinc
 CFLAGS += -mcpu=cortex-m4 -mthumb -fdata-sections -ffunction-sections
+#CFLAGS += -mfpu=fpv4-sp-d16 -mfloat-abi=hard
 CFLAGS += -DSTM32F303xC
 CFLAGS += -DHSE_VALUE=8000000
 

@@ -2,7 +2,8 @@
 
 #include <string.h>
 #include <strings.h>
-//#include <stm32f4xx.h>
+
+#include <rtisan_internal.h>
 
 extern char _sbss, _ebss, _sidata, _sdata, _edata, _stack_top,
 		_start_vectors /*, _sfast, _efast */;
@@ -23,11 +24,10 @@ void _start(void)
 	/* Zero BSS segment */
 	bzero(&_sbss, &_ebss - &_sbss);
 
-	/* We don't have CCM-SRAM, but why limit ourselves */
+	/* Setup CCM SRAM XXX */
 	/* bzero(&_sfast, &_efast - &_sfast); */
 
-	// XXX GNU-ARM-Eclipse-QEMU can't handle this
-#if 0
+#ifdef HAVE_FPU
 	/* FPU interrupt handling: lazy save of FP state */
 	FPU->FPCCR |= FPU_FPCCR_ASPEN_Msk | FPU_FPCCR_LSPEN_Msk;
 
