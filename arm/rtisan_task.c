@@ -212,8 +212,16 @@ WakeCounter_t RTGetWakeCount(void)
 	return RTTaskSelected()->blockingInfo.fields.wakeCount;
 }
 
+static void RTIdleTask(void *unused)
+{
+	(void) unused;
+
+	while (true);
+}
+
 void RTGo(void)
 {
+	RTTaskCreate(0, RTIdleTask, NULL);
 	RTEnableSystick();
 
 #if 0

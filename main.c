@@ -62,13 +62,6 @@ RTLock_t lock;
 
 void *malloc(size_t size);
 
-void idletask(void *unused)
-{
-	(void) unused;
-
-	while (true);
-}
-
 void factortask(void *ctx)
 {
 	printf("Task start, %p\r\n", ctx);
@@ -127,8 +120,10 @@ void MAINFUNC(void);
 #endif
 
 int main() {
+#ifndef __linux__
 	ClockConfiguration();
 	RTHeapInit();
+#endif
 
 	RTLEDInit(8, leds);
 	RTLEDSet(0, true);
@@ -163,7 +158,6 @@ int main() {
 
 	lock = RTLockCreate();
 
-	RTTaskCreate(1, idletask, NULL);
 #if 0
 	RTTaskCreate(10, othertask, (void *) 3);
 	RTTaskCreate(11, othertask, (void *) 7);

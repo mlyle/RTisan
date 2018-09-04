@@ -30,6 +30,8 @@ ifneq ($(LINUX)x,x)
 BUILD_DIR := build.linux
 SRC += $(wildcard linux/*.c)
 INC += linux/inc
+CFLAGS += -pthread
+LDFLAGS += -pthread
 else
 ### EMBEDDED SPECIFIC STUFF HERE ###
 CC := $(ARM_SDK_PREFIX)gcc
@@ -56,6 +58,8 @@ CFLAGS += -nostdinc
 CFLAGS += -mcpu=cortex-m4 -mthumb -fdata-sections -ffunction-sections
 CFLAGS += -DSTM32F303xC
 CFLAGS += -DHSE_VALUE=8000000
+
+all: $(BUILD_DIR)/tasker.bin
 ### END EMBEDDED SPECIFIC STUFF ###
 endif
 
@@ -80,7 +84,7 @@ else
     CFLAGS += -Werror
 endif
 
-all: $(BUILD_DIR)/tasker.bin
+all: $(BUILD_DIR)/tasker
 
 %.bin: %
 	$(ARM_SDK_PREFIX)objcopy -O binary $< $@
