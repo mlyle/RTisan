@@ -35,7 +35,7 @@ enum DIOPinFunc {
 	DIO_PIN_OUTPUT = 1,
 	DIO_PIN_ALTFUNC_IN = 2,
 	DIO_PIN_ALTFUNC_OUT = 3,
-	DIO_PIN_ANALOG = 4 
+	DIO_PIN_ANALOG = 4
 };
 
 enum DIOPull {
@@ -121,7 +121,7 @@ static inline void DIOSetInput(DIOTag_t t, enum DIOPull pull);
 
 /**
  * @brief Reads a GPIO logical value.
- * @param[in] t The GPIO specifier tag 
+ * @param[in] t The GPIO specifier tag
  * @retval True if the GPIO is high; otherwise low.
  */
 static inline bool DIORead(DIOTag_t t);
@@ -144,10 +144,10 @@ static inline bool DIORead(DIOTag_t t);
 		DIOSHL(od, 45) | \
 		DIOSHL(altFunc, 46))
 
-#define GPIOA_DIO(pin_num) DIO_MAKE_TAG(GPIOA, 1<<(pin_num)) 
-#define GPIOB_DIO(pin_num) DIO_MAKE_TAG(GPIOB, 1<<(pin_num)) 
-#define GPIOC_DIO(pin_num) DIO_MAKE_TAG(GPIOC, 1<<(pin_num)) 
-#define GPIOD_DIO(pin_num) DIO_MAKE_TAG(GPIOD, 1<<(pin_num)) 
+#define GPIOA_DIO(pin_num) DIO_MAKE_TAG(GPIOA, 1<<(pin_num))
+#define GPIOB_DIO(pin_num) DIO_MAKE_TAG(GPIOB, 1<<(pin_num))
+#define GPIOC_DIO(pin_num) DIO_MAKE_TAG(GPIOC, 1<<(pin_num))
+#define GPIOD_DIO(pin_num) DIO_MAKE_TAG(GPIOD, 1<<(pin_num))
 #define GPIOE_DIO(pin_num) DIO_MAKE_TAG(GPIOE, 1<<(pin_num))
 #define GPIOF_DIO(pin_num) DIO_MAKE_TAG(GPIOF, 1<<(pin_num))
 
@@ -253,7 +253,7 @@ enum DIOSTMPinFunc {
 	DIO_STMPIN_INPUT = 0,
 	DIO_STMPIN_OUTPUT = 1,
 	DIO_STMPIN_ALTFUNC = 2,
-	DIO_STMPIN_ANALOG = 3 
+	DIO_STMPIN_ANALOG = 3
 };
 
 static inline void DIOSetAltfuncOutput(DIOTag_t t, int alt_func,
