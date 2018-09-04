@@ -3,12 +3,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include "rtisan_internal.h"
 
 #define THUMB_PC_MASK 0xfffffffe
 #define EXC_RET_THREAD 0xfffffffd
 
 #define PROC_STACK_SIZE 800
+
+struct _reent default_reent;
+struct _reent *_impure_ptr = &default_reent;
 
 union BlockingInfo {
 	struct {
@@ -27,6 +31,8 @@ struct RTTask_s {
 	bool ticksCreateWakes;
 
 	RTPrio_t priority;
+
+	struct _reent reent;
 
 	uint32_t canary;
 };
@@ -58,6 +64,8 @@ static inline int GetTaskAllocSize()
 
 void RTTaskCreateImpl(RTTask_t taskRec, void (*task)(void *), void *arg)
 {
+	memset(&taskRec->reent, 0, sizeof(taskRec->reent));
+
 	void *endStack = ((void *) taskRec) +
 		GetTaskAllocSize();
 
@@ -222,6 +230,8 @@ void *RTTaskStackSave(TaskId_t newTask, void *psp)
 	curTask = newTask;
 
 	ourTask = RTTaskSelected();
+
+	_impure_ptr = &ourTask->reent;
 
 	return ourTask->sp;
 }

@@ -6,7 +6,6 @@
 
 extern char _sheap, _eheap;
 static uint32_t HeapSize;
-
 static volatile uint32_t HeapPos;
 
 void RTHeapInit()
@@ -15,8 +14,9 @@ void RTHeapInit()
 }
 
 /* alignment must be a power of 2 */
-inline void *aligned_alloc(size_t alignment, size_t size)
+void *RTaligned_alloc(size_t alignment, size_t size)
 {
+
 	/* We don't implement negative sbrk, etc */
 	if (size < 0) {
 		return NULL;
@@ -48,17 +48,17 @@ inline void *aligned_alloc(size_t alignment, size_t size)
 	}
 }
 
-inline void *malloc(size_t size)
+void *RTmalloc(size_t size)
 {
-	return aligned_alloc(sizeof(uintptr_t), size);
+	return RTaligned_alloc(sizeof(uintptr_t), size);
 }
 
-void *calloc(size_t nmemb, size_t size)
+void *RTcalloc(size_t nmemb, size_t size)
 {
 	/* XXX: could overrun */
 	size_t fullSize = nmemb * size;
 
-	void *ret = malloc(fullSize);
+	void *ret = RTmalloc(fullSize);
 
 	if (ret) {
 		memset(ret, 0, fullSize);
@@ -67,7 +67,21 @@ void *calloc(size_t nmemb, size_t size)
 	return ret;
 }
 
-void *_sbrk(intptr_t increment)
+void *_malloc_r(struct _reent *re, size_t n)
 {
-	return malloc(increment);
+	(void) re;
+
+	return RTmalloc(n);
+}
+
+void *_calloc_r(struct _reent *re, size_t n)
+{
+	(void) re;
+
+	return RTmalloc(n);
+}
+
+void *_sbrk_r(struct _reent *re, intptr_t increment)
+{
+	return RTmalloc(increment);
 }

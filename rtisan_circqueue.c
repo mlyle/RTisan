@@ -225,8 +225,8 @@ void RTCQClear(RTCircQueue_t q) {
 	q->readTail = q->writeHead;
 }
 
-/** Releases an element of read data obtained by RTCQread_pos.
- * Behavior is undefined if RTCQread_pos did not previously return
+/** Releases an element of read data obtained by RTCQReadPos.
+ * Behavior is undefined if RTCQReadPos did not previously return
  * a block of data.
  *
  * @param[in] q Handle to the circular queue.
@@ -237,15 +237,15 @@ void RTCQReadDone(RTCircQueue_t q) {
 
 	/* If this is being called, the queue had better not be empty--
 	 * we're supposed to finish consuming this element after a prior call
-	 * to RTCQread_pos.
+	 * to RTCQReadPos.
 	 */
 	assert(readTail != q->writeHead);
 
 	q->readTail = NextPos(q->numElem, readTail);
 }
 
-/** Releases multiple elements of read data obtained by RTCQread_pos.
- * Behavior is undefined if returning more than RTCQread_pos
+/** Releases multiple elements of read data obtained by RTCQReadPos.
+ * Behavior is undefined if returning more than RTCQReadPos
  * previously signaled in contig.
  *
  * @param[in] q Handle to the circula queue.
@@ -261,7 +261,7 @@ void RTCQReadDoneMulti(RTCircQueue_t q, int num) {
 
 	/* If this is being called, the queue had better not be empty--
 	 * we're supposed to finish consuming this element after a prior call
-	 * to RTCQread_pos.
+	 * to RTCQReadPos.
 	 */
 	assert(origReadTail != q->writeHead);
 
