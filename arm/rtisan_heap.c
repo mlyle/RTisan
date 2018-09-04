@@ -81,6 +81,13 @@ void *_calloc_r(struct _reent *re, size_t n)
 	return RTmalloc(n);
 }
 
+void _free_r(struct _reent *re, void *ptr)
+{
+	(void) re;
+
+	(void) ptr;
+}
+
 void *_sbrk_r(struct _reent *re, intptr_t increment)
 {
 	return RTmalloc(increment);
