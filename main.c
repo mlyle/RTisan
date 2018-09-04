@@ -58,9 +58,8 @@ const void *interrupt_vectors[] __attribute((section(".interrupt_vectors"))) =
 
 /* End interim USB stuff */
 
+#if 0
 RTLock_t lock;
-
-void *malloc(size_t size);
 
 void factortask(void *ctx)
 {
@@ -86,7 +85,6 @@ void factortask(void *ctx)
 	}
 }
 
-#if 0
 void othertask(void *ctx)
 {
 	printf("Task start, %p\r\n", ctx);
@@ -116,10 +114,32 @@ void othertask(void *ctx)
 void ClockConfiguration(void); /* XXX */
 
 #if defined(MAINFUNC)
-void MAINFUNC(void);
+void MAINFUNC(int argc, char *argv[]);
+
+struct mainargs {
+	int argc;
+	char **argv;
+};
+
+void maintask(void *ctx)
+{
+	struct mainargs *args = ctx;
+
+	MAINFUNC(args->argc, args->argv);
+}
 #endif
 
-int main() {
+#ifdef __linux__
+int main(int argc, char *argv[])
+{
+#else
+int main(void)
+{
+	int argc=0;
+	char *argv[] = { NULL };
+
+	(void) argc; (void) argv;
+#endif
 #ifndef __linux__
 	ClockConfiguration();
 	RTHeapInit();
@@ -156,17 +176,19 @@ int main() {
 
 	RTTasksInit();
 
+#if 0
 	lock = RTLockCreate();
 
-#if 0
 	RTTaskCreate(10, othertask, (void *) 3);
 	RTTaskCreate(11, othertask, (void *) 7);
 	RTTaskCreate(12, othertask, (void *) 1000);
 #endif
-	RTTaskCreate(10, factortask, (void *) 3);
+//	RTTaskCreate(10, factortask, (void *) 3);
 
 #if defined(MAINFUNC)
-	MAINFUNC();
+
+	struct mainargs args = { argc, argv };
+	RTTaskCreate(10, maintask, &args);
 #endif
 
 	RTGo();
