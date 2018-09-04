@@ -17,11 +17,17 @@ CFLAGS :=
 CFLAGS += -fomit-frame-pointer -Wall -g3 #-Og
 LIBS :=
 LDFLAGS :=
+SRC :=
 
-SRC := $(wildcard *.c)
+#APPPATH := app
+#INC += app
+#include $(APPPATH)/app.mk
 
-ifeq (a,b)
+SRC += $(wildcard *.c)
+
+ifneq ($(LINUX)x,x)
 ### Linux specific stuff here ###
+BUILD_DIR := build.linux
 SRC += $(wildcard linux/*.c)
 INC += linux/inc
 else
@@ -33,7 +39,7 @@ LDFLAGS += -Ltools/gcc-arm-none-eabi-6-2017-q2-update/lib/gcc/arm-none-eabi/6.3.
 LDFLAGS += -Wl,--fatal-warnings -Wl,--gc-sections
 LDFLAGS += -Tmemory.ld -Ttasker.ld
 
-LIBS += -lc -lgcc
+LIBS += -lc -lm -lgcc
 
 INC += libs/inc/stm32f3xx
 INC += libs/inc/usb
@@ -55,11 +61,7 @@ endif
 
 CC := ccache $(CC)
 
-APPPATH := app
-#INC += app
-#include $(APPPATH)/app.mk
-
-OBJ := $(patsubst %.c,build/%.o,$(SRC))
+OBJ := $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRC))
 
 OBJ_FORCE :=
 
@@ -67,6 +69,7 @@ ifeq ("$(STACK_USAGE)","")
     CCACHE_BIN := $(shell which ccache 2>/dev/null)
 endif
 
+CPPFLAGS += $(patsubst %,-DMAINFUNC=%,$(MAIN_FUNC))
 CPPFLAGS += $(patsubst %,-I%,$(INC))
 CFLAGS += $(CPPFLAGS)
 
@@ -77,18 +80,18 @@ else
     CFLAGS += -Werror
 endif
 
-all: build/tasker.bin
+all: $(BUILD_DIR)/tasker.bin
 
 %.bin: %
 	$(ARM_SDK_PREFIX)objcopy -O binary $< $@
 
-build/tasker: $(OBJ)
+$(BUILD_DIR)/tasker: $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ) -o $@ $(LIBS)
 
 clean:
 	rm -rf $(BUILD_DIR)
 
-build/%.o: %.c $(OBJ_FORCE)
+$(BUILD_DIR)/%.o: %.c $(OBJ_FORCE)
 	@mkdir -p $(dir $@)
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 

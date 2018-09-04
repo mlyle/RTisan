@@ -122,6 +122,10 @@ void othertask(void *ctx)
 
 void ClockConfiguration(void); /* XXX */
 
+#if defined(MAINFUNC)
+void MAINFUNC(void);
+#endif
+
 int main() {
 	ClockConfiguration();
 	RTHeapInit();
@@ -166,6 +170,10 @@ int main() {
 	RTTaskCreate(12, othertask, (void *) 1000);
 #endif
 	RTTaskCreate(10, factortask, (void *) 3);
+
+#if defined(MAINFUNC)
+	MAINFUNC();
+#endif
 
 	RTGo();
 }

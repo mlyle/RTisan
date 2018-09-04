@@ -53,6 +53,8 @@ struct RTLock_s {
 static RTTask_t taskTable[TASK_MAX + 1];
 static TaskId_t curTask;
 
+static void RTTaskCreateImpl(RTTask_t taskRec, void (*task)(void *), void *arg);
+
 void RTTasksInit()
 {
 }
@@ -60,37 +62,6 @@ void RTTasksInit()
 static inline int GetTaskAllocSize()
 {
 	return sizeof(struct RTTask_s) + PROC_STACK_SIZE;
-}
-
-void RTTaskCreateImpl(RTTask_t taskRec, void (*task)(void *), void *arg)
-{
-	memset(&taskRec->reent, 0, sizeof(taskRec->reent));
-
-	void *endStack = ((void *) taskRec) +
-		GetTaskAllocSize();
-
-	taskRec->sp = endStack;
-	/* setup initial stack frame */
-	*(--taskRec->sp) = 0x21000000; /* Initial PSR */
-	*(--taskRec->sp) = (uint32_t) task & THUMB_PC_MASK;
-	*(--taskRec->sp) = 0;           /* lr */
-	*(--taskRec->sp) = 0;           /* r12 */
-	*(--taskRec->sp) = 0;           /* r3  */
-	*(--taskRec->sp) = 0;           /* r2  */
-	*(--taskRec->sp) = 0;           /* r1  */
-	*(--taskRec->sp) = (uint32_t) arg; /* r0  */
-
-	*(--taskRec->sp) = EXC_RET_THREAD;  /* ret vec  */
-	*(--taskRec->sp) = 0;           /* r11  */
-	*(--taskRec->sp) = 0;           /* r10  */
-	*(--taskRec->sp) = 0;           /* r9   */
-	*(--taskRec->sp) = 0;           /* r8   */
-	*(--taskRec->sp) = 0;           /* r7   */
-	*(--taskRec->sp) = 0;           /* r6   */
-	*(--taskRec->sp) = 0;           /* r5   */
-	*(--taskRec->sp) = 0;           /* r4   */
-
-	taskRec->canary = 5678;
 }
 
 RTTask_t RTTaskCreate(RTPrio_t prio, void (*task)(void *), void *arg)
@@ -299,6 +270,37 @@ void RTSleep(uint32_t ticks)
 
 		task->ticksCreateWakes = false;
 	};
+}
+
+static void RTTaskCreateImpl(RTTask_t taskRec, void (*task)(void *), void *arg)
+{
+	memset(&taskRec->reent, 0, sizeof(taskRec->reent));
+
+	void *endStack = ((void *) taskRec) +
+		GetTaskAllocSize();
+
+	taskRec->sp = endStack;
+	/* setup initial stack frame */
+	*(--taskRec->sp) = 0x21000000; /* Initial PSR */
+	*(--taskRec->sp) = (uint32_t) task & THUMB_PC_MASK;
+	*(--taskRec->sp) = 0;           /* lr */
+	*(--taskRec->sp) = 0;           /* r12 */
+	*(--taskRec->sp) = 0;           /* r3  */
+	*(--taskRec->sp) = 0;           /* r2  */
+	*(--taskRec->sp) = 0;           /* r1  */
+	*(--taskRec->sp) = (uint32_t) arg; /* r0  */
+
+	*(--taskRec->sp) = EXC_RET_THREAD;  /* ret vec  */
+	*(--taskRec->sp) = 0;           /* r11  */
+	*(--taskRec->sp) = 0;           /* r10  */
+	*(--taskRec->sp) = 0;           /* r9   */
+	*(--taskRec->sp) = 0;           /* r8   */
+	*(--taskRec->sp) = 0;           /* r7   */
+	*(--taskRec->sp) = 0;           /* r6   */
+	*(--taskRec->sp) = 0;           /* r5   */
+	*(--taskRec->sp) = 0;           /* r4   */
+
+	taskRec->canary = 5678;
 }
 
 static __attribute__((naked, noreturn)) void RTTaskSwitch()

@@ -92,3 +92,9 @@ void *_sbrk_r(struct _reent *re, intptr_t increment)
 {
 	return RTmalloc(increment);
 }
+
+void abort(void)
+{
+	while (1);
+}
+
