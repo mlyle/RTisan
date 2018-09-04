@@ -16,4 +16,6 @@
 
 #include <rtisan_assert.h>
 
+#define HAVE_FPU
+
 #endif

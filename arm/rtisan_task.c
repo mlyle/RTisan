@@ -9,7 +9,7 @@
 #define THUMB_PC_MASK 0xfffffffe
 #define EXC_RET_THREAD 0xfffffffd
 
-#define PROC_STACK_SIZE 800
+#define PROC_STACK_SIZE 1600
 
 struct _reent default_reent;
 struct _reent *_impure_ptr = &default_reent;
@@ -50,7 +50,7 @@ struct RTLock_s {
 	volatile uint16_t waiters[LOCK_WAITERS_MAX];
 };
 
-static RTTask_t taskTable[TASK_MAX + 1];
+static volatile RTTask_t taskTable[TASK_MAX + 1];
 static TaskId_t curTask;
 
 static void RTTaskCreateImpl(RTTask_t taskRec, void (*task)(void *), void *arg);
@@ -64,7 +64,7 @@ static inline int GetTaskAllocSize()
 	return sizeof(struct RTTask_s) + PROC_STACK_SIZE;
 }
 
-RTTask_t RTTaskCreate(RTPrio_t prio, void (*task)(void *), void *arg)
+RTTask_t RTTaskCreate(RTPrio_t prio, void (*func)(void *), void *arg)
 {
 	int i = 1;
 
@@ -73,14 +73,20 @@ RTTask_t RTTaskCreate(RTPrio_t prio, void (*task)(void *), void *arg)
 			continue;
 		}
 
-		taskTable[i] = malloc(GetTaskAllocSize());
-		taskTable[i]->priority = prio;
-		taskTable[i]->blockingInfo.val32 = 0;
-		taskTable[i]->ticksCreateWakes = false;
+		RTTask_t task = malloc(GetTaskAllocSize());
 
-		RTTaskCreateImpl(taskTable[i], task, arg);
+		task = malloc(GetTaskAllocSize());
+		task->priority = prio;
+		task->blockingInfo.val32 = 0;
+		task->ticksCreateWakes = false;
 
-		return taskTable[i];
+		RTTaskCreateImpl(task, func, arg);
+
+		asm volatile("CPSID i");
+		taskTable[i] = task;
+		asm volatile("CPSIE i");
+
+		return task;
         }
 
 	return NULL;
