@@ -74,11 +74,11 @@ void *_malloc_r(struct _reent *re, size_t n)
 	return RTmalloc(n);
 }
 
-void *_calloc_r(struct _reent *re, size_t n)
+void *_calloc_r(struct _reent *re, size_t n, size_t m)
 {
 	(void) re;
 
-	return RTmalloc(n);
+	return RTcalloc(n, m);
 }
 
 void _free_r(struct _reent *re, void *ptr)

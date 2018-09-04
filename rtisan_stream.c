@@ -45,7 +45,7 @@ RTStream_t RTStreamCreate(int elemSize, int txBufSize, int rxBufSize,
 
 	stream->magic = RTSTREAM_MAGIC;
 	stream->elemSize = elemSize;
-	stream->blockUntilCallbacks = true;
+	stream->blockUntilCallbacks = blockUntilCallbacks;
 
 	if (txBufSize) {
 		stream->txLock = RTLockCreate();
