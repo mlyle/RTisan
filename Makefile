@@ -19,9 +19,11 @@ LIBS :=
 LDFLAGS :=
 SRC :=
 
-#APPPATH := app
-#INC += app
-#include $(APPPATH)/app.mk
+ifneq ($(USEAPP)x,x)
+APPPATH := app
+INC += app
+include $(APPPATH)/app.mk
+endif
 
 SRC += $(wildcard *.c)
 
@@ -32,6 +34,7 @@ SRC += $(wildcard linux/*.c)
 INC += linux/inc
 CFLAGS += -pthread
 LDFLAGS += -pthread
+LIBS += -lreadline
 else
 ### EMBEDDED SPECIFIC STUFF HERE ###
 CC := $(ARM_SDK_PREFIX)gcc
@@ -41,7 +44,7 @@ LDFLAGS += -Ltools/gcc-arm-none-eabi-6-2017-q2-update/lib/gcc/arm-none-eabi/6.3.
 LDFLAGS += -Wl,--fatal-warnings -Wl,--gc-sections
 LDFLAGS += -Tmemory.ld -Ttasker.ld
 
-LIBS += -lc -lm -lgcc
+LIBS += -lc -lgcc
 
 INC += libs/inc/stm32f3xx
 INC += libs/inc/usb
@@ -62,6 +65,8 @@ CFLAGS += -DHSE_VALUE=8000000
 all: $(BUILD_DIR)/tasker.bin
 ### END EMBEDDED SPECIFIC STUFF ###
 endif
+
+LIBS += -lm
 
 CC := ccache $(CC)
 
