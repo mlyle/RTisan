@@ -25,27 +25,14 @@ static inline void AssertNotBusy(void)
 #define FLASHOPMASK ( FLASH_CR_PG_Msk | FLASH_CR_PER_Msk | FLASH_CR_PG_Msk )
 #define FLASHPAGESIZE 2048
 
-int RTFlashAddressToPage(uint16_t *addr)
-{
-	uintptr_t ptr = (uintptr_t) addr;
-
-	assert(!(ptr & (~(FLASH_BASE | 0x3fffff))));
-
-	ptr -= FLASH_BASE;
-
-	ptr /= FLASHPAGESIZE;
-
-	return ptr;
-}
-
-void RTFlashErasePage(int page)
+void RTFlashErasePage(uint16_t *page)
 {
 	UnlockFlash();
 	AssertNotBusy();
 
 	/* Select page erase operation, and page, and initiate op */
 	FLASH->CR = (FLASH->CR & (~FLASHOPMASK)) | FLASH_CR_PER_Msk;
-	FLASH->AR = page;
+	FLASH->AR = (uintptr_t) page;
 	FLASH->CR |= FLASH_CR_STRT_Msk;
 
 	/* Wait for hardware completion */

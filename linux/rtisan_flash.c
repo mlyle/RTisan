@@ -29,12 +29,6 @@ static void OpenFlash(void)
 	assert(!res);
 }
 
-int RTFlashAddressToPage(uint16_t *addr)
-{
-	printf("GP %p\n", addr);
-	return (uintptr_t) addr;
-}
-
 void RTFlashRead(uint16_t *dest, uint16_t *tgt, size_t len)
 {
 	uintptr_t pos = (uintptr_t) tgt;

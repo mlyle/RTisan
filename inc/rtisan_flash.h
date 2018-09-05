@@ -3,8 +3,7 @@
 
 #include <stdint.h>
 
-int RTFlashAddressToPage(uint16_t *addr);
-void RTFlashErasePage(int page);
+void RTFlashErasePage(uint16_t *page);
 void RTFlashProgram(uint16_t *dest, uint16_t *source, int len);
 
 #ifdef __linux__
