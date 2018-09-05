@@ -104,6 +104,9 @@ void *_sbrk_r(struct _reent *re, intptr_t increment)
 
 void abort(void)
 {
+	/* Disable interrupts, so no other tasks run. */
+	asm volatile("CPSID i");
+
 	while (1);
 }
 
