@@ -23,6 +23,10 @@ void RTGo(void);
 void RTSleep(uint32_t ticks);
 void RTWake(TaskId_t task);
 TaskId_t RTGetTaskId(void);
+uint32_t RTHeapFree(uint32_t *heapSize);
+
+#define RT_NAME "rTisan RTOS by Michael Lyle"
+#define RT_VERSIONSTR "0.10A"
 
 void RTHeapInit();
 

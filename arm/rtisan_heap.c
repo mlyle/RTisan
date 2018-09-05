@@ -8,6 +8,15 @@ extern char _sheap, _eheap;
 static uint32_t HeapSize;
 static volatile uint32_t HeapPos;
 
+uint32_t RTHeapFree(uint32_t *heapSize)
+{
+	if (heapSize) {
+		*heapSize = HeapSize;
+	}
+
+	return HeapSize - HeapPos;
+}
+
 void RTHeapInit()
 {
 	HeapSize = ((uintptr_t) &_eheap) - ((uintptr_t) &_sheap);

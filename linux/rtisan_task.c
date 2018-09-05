@@ -220,3 +220,12 @@ int RTLockLock(RTLock_t lock)
 	pthread_mutex_lock(&lock->mutex);
 	return 0;
 }
+
+uint32_t RTHeapFree(uint32_t *heapSize)
+{
+	if (heapSize) {
+		*heapSize = 1048576;
+	}
+
+	return 1048576;
+}
