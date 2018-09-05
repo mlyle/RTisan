@@ -40,7 +40,7 @@ int RTFlashAddressToPage(uint16_t *addr)
 
 void RTFlashErasePage(int page)
 {
-	LockFlash();
+	UnlockFlash();
 	AssertNotBusy();
 
 	/* Select page erase operation, and page, and initiate op */
@@ -60,12 +60,12 @@ void RTFlashErasePage(int page)
 	/* Reset end-of-program bit by storing 1 to it. */
 	FLASH->SR = FLASH_SR_EOP_Msk;
 
-	UnlockFlash();
+	LockFlash();
 }
 
 void RTFlashProgram(uint16_t *dest, uint16_t *source, int len)
 {
-	LockFlash();
+	UnlockFlash();
 	AssertNotBusy();
 
 	FLASH->CR = (FLASH->CR & (~FLASHOPMASK)) | FLASH_CR_PG_Msk;
@@ -87,5 +87,5 @@ void RTFlashProgram(uint16_t *dest, uint16_t *source, int len)
 	}
 
 	AssertNotBusy();
-	UnlockFlash();
+	LockFlash();
 }
