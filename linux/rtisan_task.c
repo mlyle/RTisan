@@ -48,9 +48,10 @@ RTTask_t RTTaskCreate(RTPrio_t prio, void (*task)(void *), void *arg)
 		newTask->priority = prio;
 		pthread_mutex_init(&newTask->mutex, NULL);
 		pthread_cond_init(&newTask->cond, NULL);
-		pthread_create(&newTask->thread, NULL, (void *)task, arg);
 
 		taskTable[i] = newTask;
+
+		pthread_create(&newTask->thread, NULL, (void *)task, arg);
 
 		return taskTable[i];
         }
