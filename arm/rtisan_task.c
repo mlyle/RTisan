@@ -50,7 +50,7 @@ struct RTLock_s {
 	volatile uint16_t waiters[LOCK_WAITERS_MAX];
 };
 
-static volatile RTTask_t taskTable[TASK_MAX + 1];
+static struct RTTask_s * volatile taskTable[TASK_MAX + 1];
 static TaskId_t curTask;
 
 static void RTTaskCreateImpl(RTTask_t taskRec, void (*task)(void *), void *arg);
@@ -82,9 +82,9 @@ RTTask_t RTTaskCreate(RTPrio_t prio, void (*func)(void *), void *arg)
 
 		RTTaskCreateImpl(task, func, arg);
 
-		asm volatile("CPSID i");
+		__sync_synchronize();
+
 		taskTable[i] = task;
-		asm volatile("CPSIE i");
 
 		return task;
         }
@@ -233,6 +233,8 @@ void RTGo(void)
 #if 0
 	SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
 #endif
+	/* Next systick will change task. */
+
 	while (1);
 }
 
