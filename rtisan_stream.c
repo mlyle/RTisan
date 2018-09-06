@@ -147,7 +147,7 @@ int RTStreamSend(RTStream_t stream, const char *buf,
 	RTLockLock(stream->txLock);
 
 	while (true) {
-		WakeCounter_t wc;
+		WakeCounter_t wc = 0;
 
 		if (block) {
 			stream->waitingForTx = RTGetTaskId();
@@ -189,7 +189,7 @@ int RTStreamReceive(RTStream_t stream, char *buf,
 	RTLockLock(stream->rxLock);
 
 	while (true) {
-		WakeCounter_t wc;
+		WakeCounter_t wc = 0;
 
 		if (block) {
 			stream->waitingForRx = RTGetTaskId();
