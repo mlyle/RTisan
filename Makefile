@@ -34,7 +34,7 @@ ifneq ($(LINUX)x,x)
 BUILD_DIR := build.linux
 SRC += $(wildcard linux/*.c)
 INC += linux/inc
-CFLAGS += -pthread
+CPPFLAGS += -pthread
 LDFLAGS += -pthread
 LIBS += -lreadline
 else
@@ -65,8 +65,8 @@ SRC += $(wildcard libs/src/usb/*.c)
 CFLAGS += -nostdinc
 CFLAGS += -mcpu=cortex-m4 -mthumb -fdata-sections -ffunction-sections
 CFLAGS += -mfpu=fpv4-sp-d16 -mfloat-abi=hard
-CFLAGS += -DSTM32F303xC
-CFLAGS += -DHSE_VALUE=8000000
+CPPFLAGS += -DSTM32F303xC
+CPPFLAGS += -DHSE_VALUE=8000000
 
 all: $(BUILD_DIR)/tasker.bin
 ### END EMBEDDED SPECIFIC STUFF ###
@@ -109,5 +109,14 @@ clean:
 $(BUILD_DIR)/%.o: %.c $(OBJ_FORCE)
 	@mkdir -p $(dir $@)
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+$(BUILD_DIR)/%.d: %.c
+	@mkdir -p $(dir $@)
+	@set -e; rm -f $@; \
+	$(CC) -M $(CPPFLAGS) $< > $@.$$$$; \
+	sed 's,\($*\)\.o[ :]*,$(BUILD_DIR)/\1.o $(BUILD_DIR)/$@ : Makefile ,g' < $@.$$$$ > $@; \
+	rm -f $@.$$$$
+
+-include $(patsubst %.c,$(BUILD_DIR)/%.d,$(SRC))
 
 FORCE:
