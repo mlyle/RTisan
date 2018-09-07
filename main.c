@@ -58,59 +58,6 @@ const void *interrupt_vectors[] __attribute((section(".interrupt_vectors"))) =
 
 /* End interim USB stuff */
 
-#if 0
-RTLock_t lock;
-
-void factortask(void *ctx)
-{
-	printf("Task start, %p\r\n", ctx);
-	while (true) {
-		int r;
-
-		if (!scanf(" %d", &r)) {
-			getchar();
-			continue;
-		}
-
-		printf("%d:", r);
-
-		for (int i = 2; i <= r; i++) {
-			if (r % i == 0) {
-				r /= i;
-				printf(" %d", i--);
-			}
-		}
-
-		printf("\r\n");
-	}
-}
-
-void othertask(void *ctx)
-{
-	printf("Task start, %p\r\n", ctx);
-	while (true) {
-		if (((uintptr_t) ctx) == 128) {
-			RTLEDToggle(1);
-		}
-
-		printf("%02d Pre-lock %p %lu\r\n", RTGetTaskId(), ctx,
-				(unsigned long) systick_cnt);
-		RTLockLock(lock);
-		printf("%02d Presleep %p %lu\r\n", RTGetTaskId(), ctx,
-				(unsigned long) systick_cnt);
-		RTSleep((uintptr_t) ctx);
-		printf("%02d Preunlck %p %lu\r\n", RTGetTaskId(), ctx,
-				(unsigned long) systick_cnt);
-		RTLockUnlock(lock);
-		printf("%02d Preslp2  %p %lu\r\n", RTGetTaskId(), ctx,
-				(unsigned long) systick_cnt);
-		RTSleep((uintptr_t) ctx);
-		printf("%02d Postall  %p %lu\r\n", RTGetTaskId(), ctx,
-				(unsigned long) systick_cnt);
-	}
-}
-#endif
-
 void ClockConfiguration(void); /* XXX */
 
 #if defined(MAINFUNC)
