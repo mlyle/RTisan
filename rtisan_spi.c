@@ -47,6 +47,7 @@ RTSPIPeriph_t RTSPICreate(RTSPIStartHandler_t startHandler, void *ctx)
 void RTSPIWakeupTaskCallback(TaskId_t task, void *ctx)
 {
 	RTWake(task);
+	RTResched();
 }
 
 /* Drivers are expected to:
