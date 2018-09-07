@@ -2,6 +2,7 @@
 #include <rtisan_internal.h>
 
 #include <rtisan_dio.h>
+#include <rtisan_nvic.h>
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -271,15 +272,20 @@ RTSPIPeriph_t RTSPIF3Create(int spiIdx, const struct RTSPIF3Pins_s *pins)
 
 	assert(periph->wrapper);
 
+	int irqn;
+
 	switch (spiIdx) {
 		case 1:
 			periph->spi = SPI1;
+			irqn = SPI1_IRQn;
 			break;
 		case 2:
 			periph->spi = SPI2;
+			irqn = SPI2_IRQn;
 			break;
 		case 3:
 			periph->spi = SPI3;
+			irqn = SPI3_IRQn;
 			break;
 		default:
 			abort();
@@ -303,9 +309,10 @@ RTSPIPeriph_t RTSPIF3Create(int spiIdx, const struct RTSPIF3Pins_s *pins)
 	periph->pins = pins;
 	periph->numSlaves = numSlaves;
 
-	/* XXX program NVIC */
-
 	F3SPIHandles[spiIdx] = periph;
+
+	/* Enable the interrupt */
+	RTNVICEnable(irqn);
 
 	return periph->wrapper;
 }
