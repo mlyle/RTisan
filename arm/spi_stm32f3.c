@@ -26,6 +26,8 @@ typedef struct RTSPIF3Periph_s {
 	RTSPIPeriph_t wrapper;
 } *RTSPIF3Periph_t;
 
+static RTSPIF3Periph_t F3SPIHandles[3];
+
 static inline void RTSPIF3Deselect(RTSPIF3Periph_t periph)
 {
 	DIOHigh(periph->pins->slaves[periph->selectedSlave]);
@@ -146,9 +148,11 @@ static void RTSPIF3NextMessage(RTSPIF3Periph_t periph)
 	RTSPIF3BeginTransfer(periph);
 }
 
-/* XXX static */
-void RTSPIF3DoWork(RTSPIF3Periph_t periph)
+static void RTSPIF3DoWork(int idx)
 {
+	RTSPIF3Periph_t periph = F3SPIHandles[idx];
+
+	assert(periph);
 	assert(periph->magic == RTSPIF3_MAGIC);
 
 	SPI_TypeDef *spi = periph->spi;
@@ -242,9 +246,20 @@ static int RTSPIF3Start(RTSPIPeriph_t wrapper, void *ctx)
 	return 0;
 }
 
-static RTSPIF3Periph_t F3SPIHandles[3];
+void RTSPIF3IRQSPI1()
+{
+	RTSPIF3DoWork(0);
+}
 
-/* XXX interrupt handlers */
+void RTSPIF3IRQSPI2()
+{
+	RTSPIF3DoWork(1);
+}
+
+void RTSPIF3IRQSPI3()
+{
+	RTSPIF3DoWork(2);
+}
 
 RTSPIPeriph_t RTSPIF3Create(int spiIdx, const struct RTSPIF3Pins_s *pins)
 {

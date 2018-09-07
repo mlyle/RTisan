@@ -11,5 +11,8 @@ struct RTSPIF3Pins_s {
 
 RTSPIPeriph_t RTSPIF3Create(int spiIdx, const struct RTSPIF3Pins_s *pins);
 
+void RTSPIF3IRQSPI1() __attribute__((interrupt));
+void RTSPIF3IRQSPI2() __attribute__((interrupt));
+void RTSPIF3IRQSPI3() __attribute__((interrupt));
 
 #endif /* __SPI_STM32F3_H */
