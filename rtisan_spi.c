@@ -125,7 +125,11 @@ int RTSPIDoTransfers(RTSPIPeriph_t periph, RTSPITransfer_t **transfers,
 		ret = 0;
 
 		/* Start peripheral; implementation must be idempotent */
-		periph->startHandler(periph, periph->ctx);
+		if (periph->startHandler) {
+			if (periph->startHandler(periph, periph->ctx)) {
+				abort();
+			}
+		}
 	}
 
 	RTLockUnlock(periph->addLock);

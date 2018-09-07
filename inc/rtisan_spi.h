@@ -2,6 +2,7 @@
 #define __RTISAN_SPI_H
 
 #include <stdbool.h>
+#include <rtisan.h>
 
 struct RTSPIPeriph_s;
 typedef struct RTSPIPeriph_s *RTSPIPeriph_t;
