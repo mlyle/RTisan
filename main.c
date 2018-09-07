@@ -7,70 +7,17 @@
 #include <string.h>
 
 #include <rtisan.h>
-#include <rtisan_nvic.h>
 #include <rtisan_led.h>
 #include <systick_handler.h>
 #include <rtisan_stream.h>
 
-#ifndef __linux__
-#include <spi_stm32f3.h>
-
-/* XXX dac clear, dac load, nail to values ... */
-
-static const struct RTSPIF3Pins_s SPI1Pins = {
-	.miso = GPIOA_DIO(6)
-		| INIT_DIO_ALTFUNC_IN(DIO_PULL_UP, 5),
-	.mosi = GPIOA_DIO(7)
-		| INIT_DIO_ALTFUNC_OUT(DIO_PULL_UP, DIO_DRIVE_MEDIUM, false, 5),
-	.sck = GPIOA_DIO(5)
-		| INIT_DIO_ALTFUNC_OUT(DIO_PULL_UP, DIO_DRIVE_MEDIUM, false, 5),
-	.slaves = {
-		GPIOA_DIO(4)
-			| INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
-		DIO_NULL
-	},
-};
-
-static const struct RTSPIF3Pins_s SPI2Pins = {
-	.miso = GPIOB_DIO(14)
-		| INIT_DIO_ALTFUNC_IN(DIO_PULL_UP, 5),
-	.mosi = DIO_NULL,
-	.sck = GPIOB_DIO(13)
-		| INIT_DIO_ALTFUNC_OUT(DIO_PULL_UP, DIO_DRIVE_MEDIUM, false, 5),
-	.slaves = {
-		DIO_NULL
-	},
-};
-
-static const struct RTSPIF3Pins_s SPI3Pins = {
-	.miso = GPIOB_DIO(4)
-		| INIT_DIO_ALTFUNC_IN(DIO_PULL_UP, 6),
-	.mosi = DIO_NULL,
-	.sck = GPIOB_DIO(3)
-		| INIT_DIO_ALTFUNC_OUT(DIO_PULL_UP, DIO_DRIVE_MEDIUM, false, 6),
-	.slaves = {
-		DIO_NULL
-	},
-};
-#endif
-
-static const DIOInitTag_t leds[8] = {
-#ifndef __linux__
-	GPIOE_DIO(8) | INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
-	GPIOE_DIO(9) | INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
-	GPIOE_DIO(10) | INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
-	GPIOE_DIO(11) | INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
-	GPIOE_DIO(12) | INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
-	GPIOE_DIO(13) | INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
-	GPIOE_DIO(14) | INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
-	GPIOE_DIO(15) | INIT_DIO_OUTPUT(DIO_DRIVE_MEDIUM, false, false),
-#endif
-};
+#include "board.h"
 
 RTStream_t cdcStream;
 
 /* Begin interim USB stuff */
 #ifndef __linux__
+#include <rtisan_nvic.h>
 #include "usbd_core.h"
 #include "usbd_desc.h"
 #include "usbd_cdc.h"
@@ -129,7 +76,7 @@ int main(void)
 	RTHeapInit();
 #endif
 
-	RTLEDInit(8, leds);
+	RTLEDInit(RTNUMELEM(LEDPins), LEDPins);
 	RTLEDSet(0, true);
 	RTLEDSet(2, true);
 
@@ -146,10 +93,9 @@ int main(void)
 	assert(SPI3Periph);
 
 	/* XXX begin USB chunk 2 */
-	DIOInit(GPIOA_DIO(11) |
-			INIT_DIO_ALTFUNC_OUT(DIO_PULL_NONE, DIO_DRIVE_STRONG, false, 14));
-	DIOInit(GPIOA_DIO(12) |
-			INIT_DIO_ALTFUNC_OUT(DIO_PULL_NONE, DIO_DRIVE_STRONG, false, 14));
+	for (int i = 0; i < RTNUMELEM(USBPins); i++) {
+		DIOInit(USBPins[i]);
+	}
 
 	RTNVICEnable(USB_LP_CAN_RX0_IRQn);
 
