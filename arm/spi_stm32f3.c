@@ -280,6 +280,10 @@ RTSPIPeriph_t RTSPIF3Create(int spiIdx, const struct RTSPIF3Pins_s *pins)
 	
 	/* XXX HACK */
 	periph->refClock = 72000000;
+	if (spiIdx != 1) {
+		/* SPI2 & SPI3 are on APB1 which runs at half clock */
+		periph->refClock /= 2;
+	}
 
 	assert(periph->wrapper);
 
