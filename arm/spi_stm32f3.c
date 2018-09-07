@@ -299,9 +299,21 @@ RTSPIPeriph_t RTSPIF3Create(int spiIdx, const struct RTSPIF3Pins_s *pins)
 
 	int numSlaves = 0;
 
-	while (pins->slaves[numSlaves]) {
+	while (pins->slaves[numSlaves] != DIO_NULL) {
 		assert(numSlaves < 16);		/* Let's be reasonable */
 		DIOInit(pins->slaves[numSlaves++]);
+	}
+
+	if (numSlaves == 0) {
+		/*
+		 * Special purpose:  If there's just a null slave, still
+		 * allow SPI to work without chip select.  For things like
+		 * encoders.
+		 *
+		 * The actual access code will use DIO_NULL for selecting
+		 * and unselecting-- effectively NOPs.
+		 */
+		numSlaves = 1;
 	}
 
 	assert(numSlaves > 0);
