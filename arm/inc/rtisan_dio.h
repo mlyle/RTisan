@@ -394,6 +394,11 @@ static inline void DIOSetInput(DIOTag_t t, enum DIOPull pull)
 
 static inline void DIOInit(DIOInitTag_t t)
 {
+	/* Empty value meaning "no pin" is OK */
+	if (t == DIO_NULL) {
+		return;
+	}
+
 	enum DIOPinFunc func = GET_DIO_FUNC(t);
 
 	switch (func) {

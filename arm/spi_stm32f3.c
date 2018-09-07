@@ -1,6 +1,8 @@
 #include <spi_stm32f3.h>
 #include <rtisan_internal.h>
 
+#include <rtisan_dio.h>
+
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -9,6 +11,7 @@ typedef struct RTSPIF3Periph_s {
 	uint32_t magic;
 
 	SPI_TypeDef *spi;
+	const struct RTSPIF3Pins_s *pins;
 
 	int refClock;
 
@@ -25,7 +28,8 @@ typedef struct RTSPIF3Periph_s {
 
 static inline void RTSPIF3Deselect(RTSPIF3Periph_t periph)
 {
-	/* XXX do chip select work */
+	DIOHigh(periph->pins->slaves[periph->selectedSlave]);
+
 	periph->selectedSlave = -1;
 }
 
@@ -38,9 +42,9 @@ static inline void RTSPIF3Select(RTSPIF3Periph_t periph,
 	assert(transfer->slave >= 0);
 	assert(transfer->slave < periph->numSlaves);
 
-	/* XXX do chip select work */
-
 	periph->selectedSlave = transfer->slave;
+
+	DIOLow(periph->pins->slaves[periph->selectedSlave]);
 }
 
 static void RTSPIF3BeginTransfer(RTSPIF3Periph_t periph)
@@ -51,7 +55,12 @@ static void RTSPIF3BeginTransfer(RTSPIF3Periph_t periph)
 
 	if ((periph->selectedSlave != -1) &&
 			(periph->selectedSlave != transfer->slave)) {
-		/* XXX disable any chip select that isn't ours */
+		/*
+		 * Disable any chip select that isn't ours.
+		 * (We can only get here if the previous transfer
+		 * requested no deselect, but now we're using a
+		 * difference device).
+		 */
 		RTSPIF3Deselect(periph);
 	}
 
@@ -137,8 +146,11 @@ static void RTSPIF3NextMessage(RTSPIF3Periph_t periph)
 	RTSPIF3BeginTransfer(periph);
 }
 
+/* XXX static */
 void RTSPIF3DoWork(RTSPIF3Periph_t periph)
 {
+	assert(periph->magic == RTSPIF3_MAGIC);
+
 	SPI_TypeDef *spi = periph->spi;
 
 	assert(periph->transfer);
@@ -230,7 +242,11 @@ static int RTSPIF3Start(RTSPIPeriph_t wrapper, void *ctx)
 	return 0;
 }
 
-RTSPIPeriph_t RTSPIF3Create(void)
+static RTSPIF3Periph_t F3SPIHandles[3];
+
+/* XXX interrupt handlers */
+
+RTSPIPeriph_t RTSPIF3Create(int spiIdx, const struct RTSPIF3Pins_s *pins)
 {
 	RTSPIF3Periph_t periph = calloc(1, sizeof(*periph));
 
@@ -240,10 +256,41 @@ RTSPIPeriph_t RTSPIF3Create(void)
 
 	assert(periph->wrapper);
 
-	/* XXX specifying port */
-	/* XXX specifying slaves */
-	/* XXX NVIC */
-	/* XXX hooking interrupt path */
+	switch (spiIdx) {
+		case 1:
+			periph->spi = SPI1;
+			break;
+		case 2:
+			periph->spi = SPI2;
+			break;
+		case 3:
+			periph->spi = SPI3;
+			break;
+		default:
+			abort();
+	}
+
+	spiIdx--;
+
+	DIOInit(pins->mosi);
+	DIOInit(pins->miso);
+	DIOInit(pins->sck);
+
+	int numSlaves = 0;
+
+	while (pins->slaves[numSlaves]) {
+		assert(numSlaves < 16);		/* Let's be reasonable */
+		DIOInit(pins->slaves[numSlaves++]);
+	}
+
+	assert(numSlaves > 0);
+
+	periph->pins = pins;
+	periph->numSlaves = numSlaves;
+
+	/* XXX program NVIC */
+
+	F3SPIHandles[spiIdx] = periph;
 
 	return periph->wrapper;
 }
