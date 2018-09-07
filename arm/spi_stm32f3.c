@@ -84,18 +84,18 @@ static void RTSPIF3BeginTransfer(RTSPIF3Periph_t periph)
 
 	int speed = periph->refClock / 2;
 
-	uint16_t divisor = 0;
+	uint16_t scaler = 0;
 
 	while (speed > transfer->speed) {
 		speed /= 2;
-		divisor += 1;
+		scaler++;
 	}
 
-	divisor <<= SPI_CR1_BR_Pos;
+	scaler <<= SPI_CR1_BR_Pos;
 
-	assert(!(divisor & (~SPI_CR1_BR_Msk)));
+	assert(!(scaler & (~SPI_CR1_BR_Msk)));
 
-	tmp |= divisor;
+	tmp |= scaler;
 
 	spi->CR1 = tmp;
 
