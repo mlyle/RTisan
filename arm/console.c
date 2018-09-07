@@ -16,8 +16,6 @@ static int stdout_impl(char c, FILE *ign)
 		RTStreamSend(cdcStream, &c, 1, true);
 	}
 
-//	USART1->CR1 = USART_CR1_UE_Msk | USART_CR1_TE_Msk;
-//	USART1->DR = c;
 	return 0;
 }
 

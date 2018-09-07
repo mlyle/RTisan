@@ -84,6 +84,7 @@ static inline void WakeTX(RTStream_t stream)
 
 	if (waiting) {
 		RTWake(waiting);
+		RTResched();
 	}
 }
 
@@ -222,6 +223,7 @@ static inline void WakeRX(RTStream_t stream)
 
 	if (waiting) {
 		RTWake(waiting);
+		RTResched();
 	}
 }
 
