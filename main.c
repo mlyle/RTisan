@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include <rtisan.h>
+#include <rtisan_nvic.h>
 #include <rtisan_led.h>
 #include <systick_handler.h>
 #include <rtisan_stream.h>
@@ -33,15 +34,6 @@ RTStream_t cdcStream;
 #include "usbd_cdc.h"
 #include "usbd_cdc_interface.h"
 USBD_HandleTypeDef hUSBDDevice;
-
-void EnableInterrupt(int irqn)
-{
-	int idx = irqn >> 5;
-	uint32_t bit = 1 << (irqn & 0x1f);
-
-	//	NVIC->IP[irqn] = ;
-	NVIC->ISER[idx] = bit;
-}
 
 static void USB_LP_IRQHandler(void)
 {
@@ -105,7 +97,7 @@ int main(void)
 	DIOInit(GPIOA_DIO(12) |
 			INIT_DIO_ALTFUNC_OUT(DIO_PULL_NONE, DIO_DRIVE_STRONG, false, 14));
 
-	EnableInterrupt(USB_LP_CAN_RX0_IRQn);
+	RTNVICEnable(USB_LP_CAN_RX0_IRQn);
 
 	/* Init Device Library */
 	USBD_Init(&hUSBDDevice, &VCP_Desc, 0);
