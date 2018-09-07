@@ -157,8 +157,8 @@ static inline bool DIORead(DIOTag_t t);
 	DIO_MAKE_INITTAG(DIO_PIN_OUTPUT, DIO_PULL_NONE, drive, initial, od, 0)
 #define INIT_DIO_ALTFUNC_OUT(pull, drive, od, altFunc) \
 	DIO_MAKE_INITTAG(DIO_PIN_ALTFUNC_OUT, pull, drive, false, od, altFunc)
-#define INIT_DIO_ALTFUNC_IN(pull, od, altFunc) \
-	DIO_MAKE_INITTAG(DIO_PIN_ALTFUNC_OUT, pull, DIO_DRIVE_WEAK, false, od, altFunc)
+#define INIT_DIO_ALTFUNC_IN(pull, altFunc) \
+	DIO_MAKE_INITTAG(DIO_PIN_ALTFUNC_OUT, pull, DIO_DRIVE_WEAK, false, false, altFunc)
 
 #define GET_DIO_PORT(dio) ( (GPIO_TypeDef *) (((dio) >> 16) + DIO_BASE) )
 
