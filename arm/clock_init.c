@@ -8,24 +8,6 @@ void ClockConfiguration(void)
 	// Wait for it to be ticking nice.
 	while (!(RCC->CR & RCC_CR_HSERDY_Msk));
 
-#if 0
-	// Program the PLL.
-	RCC->PLLCFGR =
-			(4 << RCC_PLLCFGR_PLLM_Pos) |
-			(336 << RCC_PLLCFGR_PLLN_Pos) |
-			(2 << RCC_PLLCFGR_PLLP_Pos) |
-			(7 << RCC_PLLCFGR_PLLQ_Pos);
-
-	// Enable it.
-	RCC->CR |= RCC_CR_PLLON_Msk;
-
-	// Wait for it to be ticking nice.
-	while (!(RCC->CR &  RCC_CR_PLLRDY_Msk));
-
-	RCC->APB2ENR |= RCC_APB2ENR_USART1EN_Msk;
-	RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN_Msk;
-#endif
-
 	FLASH->ACR = (FLASH->ACR & FLASH_ACR_LATENCY_Msk) |
 		FLASH_ACR_LATENCY_2;
 
