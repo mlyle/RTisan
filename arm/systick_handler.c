@@ -13,7 +13,7 @@ static void systick_handler()
 
 void RTEnableSystick(void)
 {
-	SysTick->LOAD = 50000;
+	SysTick->LOAD = 72000 - 1;
 	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk |
 		SysTick_CTRL_TICKINT_Msk |
 		SysTick_CTRL_ENABLE_Msk;
