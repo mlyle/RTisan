@@ -238,6 +238,17 @@ void RTGo(void)
 	while (1);
 }
 
+static inline void Resched(void)
+{
+	/* Ensure PendSV is set */
+	SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
+}
+
+void RTResched(void)
+{
+	Resched();
+}
+
 void RTWait(WakeCounter_t wakeThreshold)
 {
 	RTTask_t task = RTTaskSelected();
@@ -257,13 +268,7 @@ void RTWait(WakeCounter_t wakeThreshold)
 					original,
 					bInfo.val32)));
 
-	/* Ensure PendSV is set */
-	SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
-}
-
-void RTYield(void)
-{
-	RTWait(RTGetWakeCount());
+	RTResched();
 }
 
 #define MAX_SLEEP_CHUNK 127
@@ -494,7 +499,7 @@ void RTLockUnlock(RTLock_t lock)
 	}
 
 	if (wokeSomeone) {
-		RTYield();	/* Let the scheduler figure out if they
+		RTResched();	/* Let the scheduler figure out if they
 				 * should run. */
 	}
 }

@@ -205,6 +205,10 @@ RTLock_t RTLockCreate(void)
 	return lock;
 }
 
+void RTResched(void)
+{
+}
+
 void RTLockUnlock(RTLock_t lock)
 {
 	pthread_mutex_unlock(&lock->mutex);
