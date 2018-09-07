@@ -29,6 +29,7 @@ uint32_t RTHeapFree(uint32_t *heapSize);
 #define RT_VERSIONSTR "0.10A"
 
 #define RTNUMELEM(x) (sizeof(x) / sizeof(*(x)))
+#define RTUNUSED __attribute__ ((unused))
 
 void RTHeapInit();
 

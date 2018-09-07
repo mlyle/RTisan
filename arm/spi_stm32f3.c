@@ -62,7 +62,7 @@ static void RTSPIF3BeginTransfer(RTSPIF3Periph_t periph)
 		 * Disable any chip select that isn't ours.
 		 * (We can only get here if the previous transfer
 		 * requested no deselect, but now we're using a
-		 * difference device).
+		 * different device).
 		 */
 		RTSPIF3Deselect(periph);
 	}
@@ -72,7 +72,7 @@ static void RTSPIF3BeginTransfer(RTSPIF3Periph_t periph)
 	SPI_TypeDef *spi = periph->spi;
 
 	/* First program SPI parameters */
-	uint32_t tmp = SPI_CR1_MSTR_Msk;
+	uint16_t tmp = SPI_CR1_MSTR_Msk | SPI_CR1_SSM_Msk | SPI_CR1_SSI_Msk;
 
 	if (transfer->cpol) {
 		tmp |= SPI_CR1_CPOL_Msk;
@@ -82,11 +82,11 @@ static void RTSPIF3BeginTransfer(RTSPIF3Periph_t periph)
 		tmp |= SPI_CR1_CPHA_Msk;
 	}
 
-	int speed = transfer->speed / 2;
+	int speed = periph->refClock / 2;
 
 	uint16_t divisor = 0;
 
-	while (speed > periph->refClock) {
+	while (speed > transfer->speed) {
 		speed /= 2;
 		divisor += 1;
 	}
@@ -99,11 +99,6 @@ static void RTSPIF3BeginTransfer(RTSPIF3Periph_t periph)
 
 	spi->CR1 = tmp;
 
-	/* Next enable SPI */	
-	tmp |= SPI_CR1_SPE_Msk;
-
-	spi->CR1 = tmp;
-
 	if (periph->selectedSlave != transfer->slave) {
 		/* if our chip select isn't enabled, do so */
 		RTSPIF3Select(periph, transfer);
@@ -112,6 +107,11 @@ static void RTSPIF3BeginTransfer(RTSPIF3Periph_t periph)
 	/* CR2 -- data width & interrupt configuration */
 	spi->CR2 = (7 << SPI_CR2_DS_Pos) | SPI_CR2_FRXTH |
 		SPI_CR2_TXEIE | SPI_CR2_RXNEIE;
+
+	/* Finally, enable SPI */
+	tmp |= SPI_CR1_SPE_Msk;
+
+	spi->CR1 = tmp;
 }
 
 static inline bool RTSPIF3InterruptsEnabled(RTSPIF3Periph_t periph)
@@ -141,6 +141,8 @@ static void RTSPIF3NextMessage(RTSPIF3Periph_t periph)
 	}
 
 	periph->transfer = nextMessage;
+	periph->rxPos = 0;
+	periph->txPos = 0;
 
 	/*
 	 * Otherwise initialize SPI for what we're doing, and do
@@ -166,7 +168,10 @@ static void RTSPIF3DoWork(int idx)
 	while (spi->SR & SPI_SR_RXNE_Msk) {
 		/* Ensure we have not received more than expected */
 		assert(periph->rxPos < periph->transfer->xferLen);
-		uint8_t b = spi->DR;
+		assert(periph->rxPos < periph->txPos);
+
+		/* It's necessary to force 8 bit accesses here. */
+		uint8_t b = *((volatile uint8_t *) &(spi->DR));
 
 		/* If there is a receive buffer, fill in the byte */
 		if (periph->transfer->rx) {
@@ -199,8 +204,10 @@ static void RTSPIF3DoWork(int idx)
 		return;
 	}
 
-	/* If the transmit buffer has space, try to fill it */
-	while (spi->SR & SPI_SR_TXE_Msk) {
+	/* If the transmit buffer has space (and receive buffer is OK)
+	 * try to fill transmit buffer */
+	while ((spi->SR & (SPI_SR_TXE_Msk | SPI_SR_RXNE_Msk)) ==
+			SPI_SR_TXE_Msk) {
 		/* But not if we have sent all we need to for this
 		 * txn.
 		 */
@@ -215,7 +222,8 @@ static void RTSPIF3DoWork(int idx)
 			b = ((uint8_t *) periph->transfer->tx)[periph->txPos];
 		}
 
-		spi->DR = b;
+
+		*((volatile uint8_t *) &(spi->DR)) = b;
 
 		periph->txPos++;
 	}
@@ -239,7 +247,7 @@ static int RTSPIF3Start(RTSPIPeriph_t wrapper, void *ctx)
 	 */
 
 	/* Check if interrupt handler enabled */
-	if (RTSPIF3InterruptsEnabled(periph)) {
+	if (!RTSPIF3InterruptsEnabled(periph)) {
 		/* if not, start next transfer */
 		RTSPIF3NextMessage(periph);
 	}
@@ -247,17 +255,17 @@ static int RTSPIF3Start(RTSPIPeriph_t wrapper, void *ctx)
 	return 0;
 }
 
-void RTSPIF3IRQSPI1()
+void RTSPIF3IRQSPI1(void)
 {
 	RTSPIF3DoWork(0);
 }
 
-void RTSPIF3IRQSPI2()
+void RTSPIF3IRQSPI2(void)
 {
 	RTSPIF3DoWork(1);
 }
 
-void RTSPIF3IRQSPI3()
+void RTSPIF3IRQSPI3(void)
 {
 	RTSPIF3DoWork(2);
 }
@@ -269,6 +277,9 @@ RTSPIPeriph_t RTSPIF3Create(int spiIdx, const struct RTSPIF3Pins_s *pins)
 	periph->magic = RTSPIF3_MAGIC;
 	periph->wrapper = RTSPICreate(RTSPIF3Start, periph);
 	periph->selectedSlave = -1;
+	
+	/* XXX HACK */
+	periph->refClock = 72000000;
 
 	assert(periph->wrapper);
 

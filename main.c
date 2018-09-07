@@ -83,15 +83,6 @@ int main(void)
 	cdcStream = RTStreamCreate(1, 129, 129, true);
 
 #ifndef __linux__
-	RTSPIPeriph_t SPI1Periph = RTSPIF3Create(1, &SPI1Pins);
-	assert(SPI1Periph);
-
-	RTSPIPeriph_t SPI2Periph = RTSPIF3Create(2, &SPI2Pins);
-	assert(SPI2Periph);
-
-	RTSPIPeriph_t SPI3Periph = RTSPIF3Create(3, &SPI3Pins);
-	assert(SPI3Periph);
-
 	/* XXX begin USB chunk 2 */
 	for (int i = 0; i < RTNUMELEM(USBPins); i++) {
 		DIOInit(USBPins[i]);
