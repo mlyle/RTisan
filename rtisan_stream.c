@@ -157,8 +157,8 @@ int RTStreamSend(RTStream_t stream, const char *buf,
 		}
 
 		if ((!stream->blockUntilCallbacks) || (stream->txCb)) {
-			doneSoFar += RTCQWrite(stream->txCircQueue, buf + doneSoFar,
-					len - doneSoFar);
+			doneSoFar += RTCQWrite(stream->txCircQueue,
+					buf + doneSoFar, len - doneSoFar);
 		}
 
 		if (stream->txCb) {
@@ -200,6 +200,10 @@ int RTStreamReceive(RTStream_t stream, char *buf,
 
 		doneSoFar += RTCQRead(stream->rxCircQueue, buf + doneSoFar,
 				len - doneSoFar);
+
+		if (stream->rxCb) {
+			stream->rxCb(stream, stream->txCtx);
+		}
 
 		if ((!block) ||
 				(doneSoFar >= len) ||

@@ -130,6 +130,16 @@ static void IncrementWakes(RTTask_t task)
 		bInfo.val32 = original;
 
 		bInfo.fields.wakeCount++;
+
+		int8_t wakeConsider = bInfo.fields.wakeThreshold -
+			bInfo.fields.wakeCount;
+
+		/* If wake count is pegged, do no more harm */
+		/* XXX this is incomplete, what about if this is happening
+		 * while not blocked */
+		if (wakeConsider == INT8_MAX) {
+			return;
+		}
 	} while (!__sync_bool_compare_and_swap(
 					&task->blockingInfo.val32,
 					original,
