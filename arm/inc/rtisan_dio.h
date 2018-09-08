@@ -50,6 +50,15 @@ typedef uint64_t DIOInitTag_t;
 #define DIO_NULL ((uintptr_t) 0)
 
 /**
+ * @brief Initializes a GPIO per an inittag.
+ *
+ * @param[in] t The DIO init tag.  Created by ORing together a GPIO
+ * specifier and one of INIT_DIO_INPUT, INIT_DIO_OUTPUT, and
+ * INIT_DIO_ALTFUNC_OUT.
+ */
+void DIOInit(DIOInitTag_t t);
+
+/**
  * @brief Configures a GPIO as alternate function output.
  *
  * @param[in] t The GPIO specifier tag (created with e.g. GPIOA_DIO(3) )
@@ -390,39 +399,6 @@ static inline void DIOSetInput(DIOTag_t t, enum DIOPull pull)
 	/* Set appropriate position to input */
 	DIO_SETREG_TWOWIDE(gp->MODER, pos, DIO_STMPIN_INPUT);
 #endif
-}
-
-static inline void DIOInit(DIOInitTag_t t)
-{
-	/* Empty value meaning "no pin" is OK */
-	if (t == DIO_NULL) {
-		return;
-	}
-
-	enum DIOPinFunc func = GET_DIO_FUNC(t);
-
-	switch (func) {
-		case DIO_PIN_INPUT:
-			DIOSetInput(t, GET_DIO_PULL(t));
-			break;
-		case DIO_PIN_OUTPUT:
-			DIOSetOutput(t, GET_DIO_OD(t),
-					GET_DIO_DRIVE(t),
-					GET_DIO_INITIAL(t));
-			break;
-		case DIO_PIN_ALTFUNC_IN:
-			DIOSetAltfuncInput(t, GET_DIO_ALTFUNC(t),
-					GET_DIO_PULL(t));
-			break;
-		case DIO_PIN_ALTFUNC_OUT:
-			DIOSetAltfuncOutput(t, GET_DIO_ALTFUNC(t),
-					GET_DIO_OD(t),
-					GET_DIO_DRIVE(t));
-			break;
-		case DIO_PIN_ANALOG:
-			DIOSetAnalog(t);
-			break;
-	}
 }
 
 static inline bool DIORead(DIOTag_t t)
