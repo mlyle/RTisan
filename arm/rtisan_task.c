@@ -134,11 +134,17 @@ static void IncrementWakes(RTTask_t task)
 		int8_t wakeConsider = bInfo.fields.wakeThreshold -
 			bInfo.fields.wakeCount;
 
-		/* If wake count is pegged, do no more harm */
-		/* XXX this is incomplete, what about if this is happening
-		 * while not blocked */
-		if (wakeConsider == INT8_MAX) {
-			return;
+		if (wakeConsider == INT8_MIN) {
+			/* This means we're wrapping around, from being
+			 * fully woken, to "asleep".
+			 *
+			 * A busy task that keeps running a tight loop
+			 * and getting wakes can end up ineligible to
+			 * run in this way.  So we need to handle
+			 * this as a special case.
+			 */
+
+			bInfo.fields.wakeThreshold++;
 		}
 	} while (!__sync_bool_compare_and_swap(
 					&task->blockingInfo.val32,

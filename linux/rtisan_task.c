@@ -54,7 +54,7 @@ RTTask_t RTTaskCreate(RTPrio_t prio, void (*task)(void *), void *arg)
 		pthread_create(&newTask->thread, NULL, (void *)task, arg);
 
 		return taskTable[i];
-        }
+	}
 
 	return NULL;
 }
@@ -76,19 +76,26 @@ inline TaskId_t RTGetTaskId(void)
 
 static inline RTTask_t RTTaskSelected(void)
 {
-        return taskTable[RTGetTaskId()];
+	return taskTable[RTGetTaskId()];
 }
 
 static bool RTTaskIsWoke(RTTask_t task)
 {
-        int8_t wakeConsider = task->thresh - task->wakes;
+	WakeCounter_t wakeConsider = task->thresh - task->wakes;
 
-        return wakeConsider <= 0;
+	return wakeConsider <= 0;
 }
 
 static void IncrementWakes(RTTask_t task)
 {
 	task->wakes++;
+
+	WakeCounter_t wakeConsider = task->thresh - task->wakes;
+
+	if (wakeConsider == INT8_MIN) {
+		task->thresh++;
+	}
+
 	pthread_cond_broadcast(&task->cond);
 }
 
