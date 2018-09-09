@@ -2,6 +2,8 @@
 #define __RTISAN_TIMER_H
 
 #include <rtisan_internal.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 struct RTTimer_s;
 
@@ -16,7 +18,7 @@ void RTTimerSetTickFrequency(RTTimer_t timer, float frequency,
 		uint32_t maxVal);
 
 void RTTimerEnable(RTTimer_t timer, bool enabled, bool oneshot);
-void RTTimerSetupCapture(RTTimer_t timer, int capIdx);
+void RTTimerSetCaptureMode(RTTimer_t timer, int capIdx, bool capture);
 
 float RTTimerGetPeriod(RTTimer_t timer);
 float RTTimerGetWrapFrequency(RTTimer_t timer);
