@@ -23,7 +23,6 @@ USEAPP ?= 1
 
 ifneq ($(USEAPP)x,x)
 APPPATH := app
-INC += app
 include $(APPPATH)/app.mk
 endif
 
