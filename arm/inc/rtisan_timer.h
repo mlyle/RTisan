@@ -18,7 +18,8 @@ void RTTimerSetTickFrequency(RTTimer_t timer, float frequency,
 		uint32_t maxVal);
 
 void RTTimerEnable(RTTimer_t timer, bool enabled, bool oneshot);
-void RTTimerSetCaptureMode(RTTimer_t timer, int capIdx, bool capture);
+void RTTimerSetCaptureMode(RTTimer_t timer, int capIdx, bool capture,
+		bool posEdge);
 
 float RTTimerGetPeriod(RTTimer_t timer);
 float RTTimerGetWrapFrequency(RTTimer_t timer);
