@@ -27,6 +27,9 @@ typedef struct RTSPIDMAF3Periph_s {
 	int selectedSlave;
 	int numSlaves;
 
+	int lastSpeed;
+	uint16_t lastScaler;
+
 	RTSPITransfer_t *transfer;
 
 	RTSPIPeriph_t wrapper;
@@ -97,16 +100,25 @@ static void RTSPIDMAF3BeginTransfer(RTSPIDMAF3Periph_t periph)
 		cr1tmp |= SPI_CR1_CPHA_Msk;
 	}
 
-	/* XXX consider caching speed */
-
+	/* Calculate interface speed (with a cache) */
 	int speed = periph->refClock / 2;
-
 	uint16_t scaler = 0;
+
+	if (speed <= periph->lastSpeed) {
+		speed = periph->lastSpeed;
+		scaler = periph->lastScaler;
+	} else {
+		speed = periph->refClock / 2;
+		scaler = 0;
+	}
 
 	while (speed > transfer->speed) {
 		speed /= 2;
 		scaler++;
 	}
+
+	periph->lastSpeed = speed;
+	periph->lastScaler = scaler;
 
 	scaler <<= SPI_CR1_BR_Pos;
 
