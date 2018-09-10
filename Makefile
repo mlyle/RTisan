@@ -21,9 +21,12 @@ SRC :=
 
 USEAPP ?= 1
 
-ifneq ($(USEAPP)x,x)
+ifeq ($(USEAPP),1)
 APPPATH := app
 include $(APPPATH)/app.mk
+else
+# XXX Hack to get board.h
+INC += app/inc
 endif
 
 SRC += $(wildcard *.c)
