@@ -67,6 +67,12 @@ static void RTSPIF3BeginTransfer(RTSPIF3Periph_t periph)
 		RTSPIF3Deselect(periph);
 	}
 
+	/*
+	 * Wait while busy flag is set-- just out of an abundance of
+	 * caution (we should never get here with it set).
+	 */
+	while (periph->spi->SR & SPI_SR_BSY_Msk);
+
 	/* Not supported: bidirectional mode, CRC mode, "RX only" mode,
 	 * slave, LSB-first ordering */
 	SPI_TypeDef *spi = periph->spi;
