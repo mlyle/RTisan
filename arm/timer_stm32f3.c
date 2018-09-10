@@ -117,6 +117,7 @@ void RTTimerSetCaptureMode(RTTimer_t timer, int capIdx, bool capture,
 				(cce << TIM_CCER_CC1E_Pos) |
 				(ccp << TIM_CCER_CC1P_Pos) |
 				(ccnp << TIM_CCER_CC1NP_Pos);
+			break;
 		case 2:
 			timer->timer->CCMR1 =
 				(timer->timer->CCMR1 & (~
@@ -134,6 +135,7 @@ void RTTimerSetCaptureMode(RTTimer_t timer, int capIdx, bool capture,
 				(cce << TIM_CCER_CC2E_Pos) |
 				(ccp << TIM_CCER_CC2P_Pos) |
 				(ccnp << TIM_CCER_CC2NP_Pos);
+			break;
 		case 3:
 			timer->timer->CCMR2 =
 				(timer->timer->CCMR2 & (~
@@ -151,6 +153,7 @@ void RTTimerSetCaptureMode(RTTimer_t timer, int capIdx, bool capture,
 				(cce << TIM_CCER_CC3E_Pos) |
 				(ccp << TIM_CCER_CC3P_Pos) |
 				(ccnp << TIM_CCER_CC3NP_Pos);
+			break;
 		case 4:
 			timer->timer->CCMR2 =
 				(timer->timer->CCMR2 & (~
@@ -168,6 +171,7 @@ void RTTimerSetCaptureMode(RTTimer_t timer, int capIdx, bool capture,
 				(cce << TIM_CCER_CC4E_Pos) |
 				(ccp << TIM_CCER_CC4P_Pos) |
 				(ccnp << TIM_CCER_CC4NP_Pos);
+			break;
 		default:
 			abort();
 	}
