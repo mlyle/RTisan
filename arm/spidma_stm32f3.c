@@ -133,9 +133,6 @@ static void RTSPIDMAF3BeginTransfer(RTSPIDMAF3Periph_t periph)
 	cr2tmp |= SPI_CR2_RXDMAEN;
 	spi->CR2 = cr2tmp;
 
-	/* Next, clear the DMA completion interrupt flag */
-	periph->dma->ISR = periph->tcif;
-
 	/*
 	 * Next we configure both DMA streams
 	 * The DMA peripheral address is already programmed into each.
@@ -209,7 +206,7 @@ static inline bool RTSPIDMAF3InterruptsEnabled(RTSPIDMAF3Periph_t periph)
 	return false;
 }
 
-static void RTSPIDMAF3NextMessage(RTSPIDMAF3Periph_t periph)
+static inline void RTSPIDMAF3NextMessage(RTSPIDMAF3Periph_t periph)
 {
 	assert(!periph->transfer);
 
@@ -251,6 +248,9 @@ static void RTSPIDMAF3DoWork(int idx)
 			periph->transfer, true);
 
 	periph->transfer = NULL;
+
+	/* Next, clear the DMA completion interrupt flag */
+	periph->dma->IFCR = periph->tcif;
 
 	RTSPIDMAF3NextMessage(periph);
 }
