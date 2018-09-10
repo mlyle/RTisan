@@ -55,6 +55,8 @@ static TaskId_t curTask;
 
 static void RTTaskCreateImpl(RTTask_t taskRec, void (*task)(void *), void *arg);
 
+static volatile uint32_t idleCounter;
+
 void RTTasksInit()
 {
 }
@@ -238,7 +240,9 @@ static void RTIdleTask(void *unused)
 {
 	(void) unused;
 
-	while (true);
+	while (true) {
+		idleCounter++;
+	}
 }
 
 void RTGo(void)
