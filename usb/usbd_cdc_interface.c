@@ -72,19 +72,13 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static USBD_CDC_LineCodingTypeDef LineCoding =
-  {
-    115200, /* baud rate*/
-    0x00,   /* stop bits-1*/
-    0x00,   /* parity - none*/
-    0x08    /* nb. of bits 8*/
-  };
 
 struct CDCInterface_s {
 	uint32_t magic;
 #define CDCINTERFACE_MAGIC 0x69434443	/* 'CDCi' */
 	uint8_t UserRxBuffer[APP_RX_DATA_SIZE];
 	RTStream_t stream;
+	USBD_CDC_LineCodingTypeDef LineCoding;
 };
 
 #define MAX_INTERFACES 2
@@ -115,8 +109,6 @@ USBD_CDC_ItfTypeDef USBD_CDC_fops =
 
 /* Private functions ---------------------------------------------------------*/
 
-/* XXX */
-extern RTStream_t cdcStream;
 
 /**
   * @brief  CDC_Itf_Init
@@ -126,6 +118,8 @@ extern RTStream_t cdcStream;
   */
 static int8_t CDC_Itf_Init(int instId, void **ctx)
 {
+/* XXX */
+extern RTStream_t cdcStream;
 /* XXX return back the context pointer for that instance id */
 /* XXX Set TX buffer / RX Buffer / TransmitPacket / Receive packet need to
  * take the instance id
@@ -143,19 +137,27 @@ static int8_t CDC_Itf_Init(int instId, void **ctx)
 
   instances[instId] = iface;
   iface->magic = CDCINTERFACE_MAGIC;
-  *ctx = iface;
+  iface->LineCoding = (USBD_CDC_LineCodingTypeDef) {
+    115200, /* baud rate*/
+    0x00,   /* stop bits-1*/
+    0x00,   /* parity - none*/
+    0x08    /* nb. of bits 8*/
+  };
 
-  assert(instances[instId]);
+  *ctx = iface;
   
   if (instId != 0) {
 	  /* XXX */
 	  return USBD_OK;
   }
 
+  /* XXX */
+  iface->stream = cdcStream;
+
   USBD_CDC_SetRxBuffer(&hUSBDDevice, iface->UserRxBuffer);
 
-  RTStreamSetTXCallback(cdcStream, CDC_TXBegin, NULL);
-  RTStreamSetRXCallback(cdcStream, CDC_RXBegin, NULL);
+  RTStreamSetTXCallback(iface->stream, CDC_TXBegin, iface);
+  RTStreamSetRXCallback(iface->stream, CDC_RXBegin, iface);
 
   return (USBD_OK);
 }
@@ -163,13 +165,16 @@ static int8_t CDC_Itf_Init(int instId, void **ctx)
 /* XXX add an instance ID to all other calls */
 static void CDC_StartTx(void *ctx, bool finished)
 {
+	struct CDCInterface_s *iface = ctx;
+	assert(iface->magic == CDCINTERFACE_MAGIC);
+
 	static volatile int inProg = 0;
 	static int numBytes = 0;
 
 	/* XXX safety */
 	if (finished) {
 		if (numBytes) {
-			RTStreamZeroCopyTXDone(cdcStream, numBytes);
+			RTStreamZeroCopyTXDone(iface->stream, numBytes);
 			numBytes = 0;
 		}
 
@@ -178,7 +183,7 @@ static void CDC_StartTx(void *ctx, bool finished)
 		return;
 	}
 
-	const char *toXmit = RTStreamZeroCopyTXPos(cdcStream, &numBytes);
+	const char *toXmit = RTStreamZeroCopyTXPos(iface->stream, &numBytes);
 
 	/* XXX cork */
 	/* XXX handles */
@@ -198,6 +203,9 @@ static void CDC_StartTx(void *ctx, bool finished)
 
 static void CDC_StartRx(void *ctx, bool finished)
 {
+	struct CDCInterface_s *iface = ctx;
+	assert(iface->magic == CDCINTERFACE_MAGIC);
+
 	static volatile int inProg;
 
 	if (finished) {
@@ -206,7 +214,7 @@ static void CDC_StartRx(void *ctx, bool finished)
 		return;
 	}
 
-	int recvSpace = RTStreamGetRXAvailable(cdcStream);
+	int recvSpace = RTStreamGetRXAvailable(iface->stream);
 
 	if (recvSpace >= 64) {
 		inProg = 1;
@@ -216,14 +224,14 @@ static void CDC_StartRx(void *ctx, bool finished)
 
 static void CDC_RXBegin(RTStream_t stream, void *ctx)
 {
-	(void) stream; (void) ctx;
+	(void) stream; 
 
 	CDC_StartRx(ctx, false);
 }
 
 static void CDC_TXBegin(RTStream_t stream, void *ctx)
 {
-	(void) stream; (void) ctx;
+	(void) stream;
 
 	CDC_StartTx(ctx, false);
 }
@@ -243,6 +251,9 @@ static int8_t CDC_Itf_TxDone(void *ctx)
   */
 static int8_t CDC_Itf_DeInit(void *ctx)
 {
+  struct CDCInterface_s *iface = ctx;
+  assert(iface->magic == CDCINTERFACE_MAGIC);
+
   return (USBD_OK);
 }
 
@@ -257,6 +268,9 @@ static int8_t CDC_Itf_DeInit(void *ctx)
 static int8_t CDC_Itf_Control(void *ctx, uint8_t cmd, uint8_t* pbuf,
 		uint16_t length)
 { 
+  struct CDCInterface_s *iface = ctx;
+  assert(iface->magic == CDCINTERFACE_MAGIC);
+
   switch (cmd)
   {
   case CDC_SEND_ENCAPSULATED_COMMAND:
@@ -268,23 +282,23 @@ static int8_t CDC_Itf_Control(void *ctx, uint8_t cmd, uint8_t* pbuf,
     break;
 
   case CDC_SET_LINE_CODING:
-    LineCoding.bitrate    = (uint32_t)(pbuf[0] | (pbuf[1] << 8) |\
+    iface->LineCoding.bitrate    = (uint32_t)(pbuf[0] | (pbuf[1] << 8) |\
                             (pbuf[2] << 16) | (pbuf[3] << 24));
-    LineCoding.format     = pbuf[4];
-    LineCoding.paritytype = pbuf[5];
-    LineCoding.datatype   = pbuf[6];
+    iface->LineCoding.format     = pbuf[4];
+    iface->LineCoding.paritytype = pbuf[5];
+    iface->LineCoding.datatype   = pbuf[6];
     
     /* Set the new configuration (N/A) */
     break;
 
   case CDC_GET_LINE_CODING:
-    pbuf[0] = (uint8_t)(LineCoding.bitrate);
-    pbuf[1] = (uint8_t)(LineCoding.bitrate >> 8);
-    pbuf[2] = (uint8_t)(LineCoding.bitrate >> 16);
-    pbuf[3] = (uint8_t)(LineCoding.bitrate >> 24);
-    pbuf[4] = LineCoding.format;
-    pbuf[5] = LineCoding.paritytype;
-    pbuf[6] = LineCoding.datatype;     
+    pbuf[0] = (uint8_t)(iface->LineCoding.bitrate);
+    pbuf[1] = (uint8_t)(iface->LineCoding.bitrate >> 8);
+    pbuf[2] = (uint8_t)(iface->LineCoding.bitrate >> 16);
+    pbuf[3] = (uint8_t)(iface->LineCoding.bitrate >> 24);
+    pbuf[4] = iface->LineCoding.format;
+    pbuf[5] = iface->LineCoding.paritytype;
+    pbuf[6] = iface->LineCoding.datatype;     
     
     break;
     
@@ -306,7 +320,10 @@ static int8_t CDC_Itf_Control(void *ctx, uint8_t cmd, uint8_t* pbuf,
   */
 static int8_t CDC_Itf_Receive(void *ctx, uint8_t* Buf, uint32_t *Len)
 {
-  RTStreamDoRXChunk(cdcStream, (char *) Buf, *Len);
+  struct CDCInterface_s *iface = ctx;
+  assert(iface->magic == CDCINTERFACE_MAGIC);
+
+  RTStreamDoRXChunk(iface->stream, (char *) Buf, *Len);
   CDC_StartRx(ctx, true);
 
   return (USBD_OK);
