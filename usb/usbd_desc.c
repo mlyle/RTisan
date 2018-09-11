@@ -88,9 +88,16 @@ const uint8_t hUSBDDeviceDesc[USB_LEN_DEV_DESC] = {
 	USB_DESC_TYPE_DEVICE, /* bDescriptorType */
 	0x00,                 /* bcdUSB */
 	0x02,
+#if 1
 	0x02,                 /* bDeviceClass */
 	0x02,                 /* bDeviceSubClass */
 	0x00,                 /* bDeviceProtocol */
+#endif
+#if 0
+	0xef,                 /* bDeviceClass */
+	0x02,                 /* bDeviceSubClass */
+	0x01,                 /* bDeviceProtocol (misc/common/IAD) */
+#endif
 	USB_MAX_EP0_SIZE,     /* bMaxPacketSize */
 	LOBYTE(USBD_VID),     /* idVendor */
 	HIBYTE(USBD_VID),     /* idVendor */
