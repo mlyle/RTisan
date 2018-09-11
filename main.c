@@ -13,7 +13,7 @@
 
 #include "board.h"
 
-RTStream_t cdcStream;
+RTStream_t cdcStreams[2];
 
 /* Begin interim USB stuff */
 #ifndef __linux__
@@ -85,7 +85,8 @@ int main(void)
 	RTLEDSet(0, true);
 	RTLEDSet(2, true);
 
-	cdcStream = RTStreamCreate(1, 129, 129, true);
+	cdcStreams[0] = RTStreamCreate(1, 97, 97, true);
+	cdcStreams[1] = RTStreamCreate(1, 97, 97, true);
 
 #ifndef __linux__
 	/* XXX begin USB chunk 2 */

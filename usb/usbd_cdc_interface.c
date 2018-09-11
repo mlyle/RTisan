@@ -117,12 +117,8 @@ USBD_CDC_ItfTypeDef USBD_CDC_fops = {
   */
 static int8_t CDC_Itf_Init(int instId, void **ctx)
 {
-/* XXX */
-	extern RTStream_t cdcStream;
-/* XXX return back the context pointer for that instance id */
-/* XXX Set TX buffer / RX Buffer / TransmitPacket / Receive packet need to
- * take the instance id
- */
+	extern RTStream_t cdcStreams[2];
+
 	if (instId > MAX_INTERFACES) {
 		return USBD_FAIL;
 	}
@@ -150,12 +146,9 @@ static int8_t CDC_Itf_Init(int instId, void **ctx)
 	USBD_CDC_SetRxBuffer(&hUSBDDevice, iface->cdcInstNum,
 			iface->UserRxBuffer);
 
-	if (instId == 0) {
-		/* XXX */
-		iface->stream = cdcStream;
-		RTStreamSetTXCallback(iface->stream, CDC_TXBegin, iface);
-		RTStreamSetRXCallback(iface->stream, CDC_RXBegin, iface);
-	}
+	iface->stream = cdcStreams[instId];
+	RTStreamSetTXCallback(iface->stream, CDC_TXBegin, iface);
+	RTStreamSetRXCallback(iface->stream, CDC_RXBegin, iface);
 
 	return (USBD_OK);
 }
@@ -168,7 +161,6 @@ static void CDC_StartTx(void *ctx, bool finished)
 	static volatile int inProg = 0;
 	static int numBytes = 0;
 
-	/* XXX safety */
 	if (finished) {
 		if (numBytes) {
 			RTStreamZeroCopyTXDone(iface->stream, numBytes);
@@ -183,8 +175,6 @@ static void CDC_StartTx(void *ctx, bool finished)
 	const char *toXmit = RTStreamZeroCopyTXPos(iface->stream, &numBytes);
 
 	/* XXX cork */
-	/* XXX handles */
-	/* XXX abstraction */
 	if (numBytes) {
 		inProg = 1;
 

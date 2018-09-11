@@ -3,7 +3,7 @@
 #include <rtisan_internal.h>
 #include <rtisan_stream.h>
 
-extern RTStream_t cdcStream;
+extern RTStream_t cdcStreams[2];
 int CDC_Xmit(const char *buf, int len);
 
 static int stdout_impl(char c, FILE *ign)
@@ -11,9 +11,9 @@ static int stdout_impl(char c, FILE *ign)
 	(void) ign;
 
 	if (c == '\n') {
-		RTStreamSend(cdcStream, "\r\n", 2, true);
+		RTStreamSend(cdcStreams[0], "\r\n", 2, true);
 	} else {
-		RTStreamSend(cdcStream, &c, 1, true);
+		RTStreamSend(cdcStreams[0], &c, 1, true);
 	}
 
 	return 0;
@@ -24,7 +24,7 @@ static int stdin_impl(FILE *ign)
 	(void) ign;
 	char c;
 
-	RTStreamReceive(cdcStream, &c, sizeof(c), true, false);
+	RTStreamReceive(cdcStreams[0], &c, sizeof(c), true, false);
 
 	return (unsigned char) c;
 }
