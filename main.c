@@ -107,7 +107,17 @@ int main(void)
 
 	RTTasksInit();
 
+#if 0
+	lock = RTLockCreate();
+
+	RTTaskCreate(10, othertask, (void *) 3);
+	RTTaskCreate(11, othertask, (void *) 7);
+	RTTaskCreate(12, othertask, (void *) 1000);
+#endif
+//	RTTaskCreate(10, factortask, (void *) 3);
+
 #if defined(MAINFUNC)
+
 	struct mainargs args = { argc, argv };
 	RTTaskCreate(10, maintask, &args);
 #endif
