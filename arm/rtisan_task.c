@@ -50,26 +50,15 @@ struct RTLock_s {
 	volatile uint16_t waiters[LOCK_WAITERS_MAX];
 };
 
-static struct RTTask_s * volatile taskTable[TASK_MAX];
+static struct RTTask_s * volatile taskTable[TASK_MAX + 1];
 static TaskId_t curTask;
 
 static void RTTaskCreateImpl(RTTask_t taskRec, void (*task)(void *), void *arg);
 
 static volatile uint32_t idleCounter;
 
-
-static void RTIdleTask(void *unused)
-{
-	(void) unused;
-
-	while (true) {
-		idleCounter++;
-	}
-}
-
 void RTTasksInit()
 {
-	RTTaskCreate(0, RTIdleTask, NULL);
 }
 
 static inline int GetTaskAllocSize()
@@ -79,9 +68,9 @@ static inline int GetTaskAllocSize()
 
 RTTask_t RTTaskCreate(RTPrio_t prio, void (*func)(void *), void *arg)
 {
-	int i = 0;
+	int i = 1;
 
-	for(i = 0; i <= TASK_MAX; i++) {
+	for(i = 1; i <= TASK_MAX; i++) {
 		if (taskTable[i]) {
 			continue;
 		}
@@ -167,9 +156,8 @@ static void IncrementWakes(RTTask_t task)
 
 void RTWake(TaskId_t task)
 {
-	/* Waking the idle task doesn't make sense */
 	assert(task > 0);
-	assert(task < TASK_MAX);
+	assert(task <= TASK_MAX);
 
 	RTTask_t t = taskTable[task];
 
@@ -192,7 +180,7 @@ TaskId_t RTTaskToRun(void)
 	TaskId_t bestTask = 0;
 	int bestPrio = -1;
 
-	for (int i = 0; i < TASK_MAX; i++) {
+	for (int i = 1; i <= TASK_MAX; i++) {
 		if (!taskTable[i]) {
 			continue;
 		}
@@ -248,8 +236,18 @@ WakeCounter_t RTGetWakeCount(void)
 	return RTTaskSelected()->blockingInfo.fields.wakeCount;
 }
 
+static void RTIdleTask(void *unused)
+{
+	(void) unused;
+
+	while (true) {
+		idleCounter++;
+	}
+}
+
 void RTGo(void)
 {
+	RTTaskCreate(0, RTIdleTask, NULL);
 	RTEnableSystick();
 
 #if 0
