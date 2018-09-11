@@ -32,11 +32,6 @@ static void USB_LP_IRQHandler(void)
 
 const void *interrupt_vectors[] __attribute((section(".interrupt_vectors"))) =
 {
-#if 0
-	[SPI1_IRQn] = RTSPIF3IRQSPI1,
-	[SPI2_IRQn] = RTSPIF3IRQSPI2,
-	[SPI3_IRQn] = RTSPIF3IRQSPI3,
-#endif
 	[DMA1_Channel2_IRQn] = RTSPIDMAF3IRQDMA1Chan2,
 	[DMA1_Channel4_IRQn] = RTSPIDMAF3IRQDMA1Chan4,
 	[DMA2_Channel1_IRQn] = RTSPIDMAF3IRQDMA2Chan1,
