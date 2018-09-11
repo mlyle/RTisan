@@ -79,6 +79,7 @@ struct CDCInterface_s {
 	uint8_t UserRxBuffer[APP_RX_DATA_SIZE];
 	RTStream_t stream;
 	USBD_CDC_LineCodingTypeDef LineCoding;
+	int cdcInstNum;
 };
 
 #define MAX_INTERFACES 2
@@ -142,6 +143,8 @@ static int8_t CDC_Itf_Init(int instId, void **ctx)
 		0x08 /* nb. of bits 8*/
 	};
 
+	iface->cdcInstNum = instId;
+
 	*ctx = iface;
 
 	if (instId != 0) {
@@ -152,7 +155,8 @@ static int8_t CDC_Itf_Init(int instId, void **ctx)
 	/* XXX */
 	iface->stream = cdcStream;
 
-	USBD_CDC_SetRxBuffer(&hUSBDDevice, iface->UserRxBuffer);
+	USBD_CDC_SetRxBuffer(&hUSBDDevice, iface->cdcInstNum,
+			iface->UserRxBuffer);
 
 	RTStreamSetTXCallback(iface->stream, CDC_TXBegin, iface);
 	RTStreamSetRXCallback(iface->stream, CDC_RXBegin, iface);
@@ -160,7 +164,6 @@ static int8_t CDC_Itf_Init(int instId, void **ctx)
 	return (USBD_OK);
 }
 
-/* XXX add an instance ID to all other calls */
 static void CDC_StartTx(void *ctx, bool finished)
 {
 	struct CDCInterface_s *iface = ctx;
@@ -193,9 +196,9 @@ static void CDC_StartTx(void *ctx, bool finished)
 			numBytes = 64;
 		}
 
-		USBD_CDC_SetTxBuffer(&hUSBDDevice, (const uint8_t *) toXmit,
-				numBytes);
-		USBD_CDC_TransmitPacket(&hUSBDDevice);
+		USBD_CDC_SetTxBuffer(&hUSBDDevice, iface->cdcInstNum,
+				(const uint8_t *) toXmit, numBytes);
+		USBD_CDC_TransmitPacket(&hUSBDDevice, iface->cdcInstNum);
 	}
 }
 
@@ -216,7 +219,7 @@ static void CDC_StartRx(void *ctx, bool finished)
 
 	if (recvSpace >= 64) {
 		inProg = 1;
-		USBD_CDC_ReceivePacket(&hUSBDDevice);
+		USBD_CDC_ReceivePacket(&hUSBDDevice, iface->cdcInstNum);
 	}
 }
 
