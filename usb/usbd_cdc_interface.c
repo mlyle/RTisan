@@ -147,19 +147,15 @@ static int8_t CDC_Itf_Init(int instId, void **ctx)
 
 	*ctx = iface;
 
-	if (instId != 0) {
-		/* XXX */
-		return USBD_OK;
-	}
-
-	/* XXX */
-	iface->stream = cdcStream;
-
 	USBD_CDC_SetRxBuffer(&hUSBDDevice, iface->cdcInstNum,
 			iface->UserRxBuffer);
 
-	RTStreamSetTXCallback(iface->stream, CDC_TXBegin, iface);
-	RTStreamSetRXCallback(iface->stream, CDC_RXBegin, iface);
+	if (instId == 0) {
+		/* XXX */
+		iface->stream = cdcStream;
+		RTStreamSetTXCallback(iface->stream, CDC_TXBegin, iface);
+		RTStreamSetRXCallback(iface->stream, CDC_RXBegin, iface);
+	}
 
 	return (USBD_OK);
 }
