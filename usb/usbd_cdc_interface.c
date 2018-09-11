@@ -51,6 +51,7 @@
 #include "usbd_cdc_interface.h"
 
 #include <rtisan.h>
+#include <rtisan_assert.h>
 #include <rtisan_circqueue.h>
 #include <rtisan_stream.h>
 
@@ -68,7 +69,6 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #define APP_RX_DATA_SIZE  64
-#define APP_TX_DATA_SIZE  128
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -80,7 +80,16 @@ static USBD_CDC_LineCodingTypeDef LineCoding =
     0x08    /* nb. of bits 8*/
   };
 
-static uint8_t UserRxBuffer[APP_RX_DATA_SIZE];/* Received Data over USB are stored in this buffer */
+struct CDCInterface_s {
+	uint32_t magic;
+#define CDCINTERFACE_MAGIC 0x69434443	/* 'CDCi' */
+	uint8_t UserRxBuffer[APP_RX_DATA_SIZE];
+	RTStream_t stream;
+};
+
+#define MAX_INTERFACES 2
+
+static struct CDCInterface_s *instances[MAX_INTERFACES];
 
 /* USB handler declaration */
 extern USBD_HandleTypeDef  hUSBDDevice;
@@ -120,18 +129,33 @@ static int8_t CDC_Itf_Init(int instId, void **ctx)
 /* XXX return back the context pointer for that instance id */
 /* XXX Set TX buffer / RX Buffer / TransmitPacket / Receive packet need to
  * take the instance id
- */ 
+ */
+  if (instId > MAX_INTERFACES) {
+	  return USBD_FAIL;
+  }
+  if (instances[instId]) {
+	  *ctx = instances[instId];
+	  return USBD_OK;
+  }
+
+  struct CDCInterface_s *iface = malloc(sizeof(*iface));
+  assert(iface);
+
+  instances[instId] = iface;
+  iface->magic = CDCINTERFACE_MAGIC;
+  *ctx = iface;
+
+  assert(instances[instId]);
+  
   if (instId != 0) {
 	  /* XXX */
 	  return USBD_OK;
   }
-  USBD_CDC_SetRxBuffer(&hUSBDDevice, UserRxBuffer);
+
+  USBD_CDC_SetRxBuffer(&hUSBDDevice, iface->UserRxBuffer);
 
   RTStreamSetTXCallback(cdcStream, CDC_TXBegin, NULL);
   RTStreamSetRXCallback(cdcStream, CDC_RXBegin, NULL);
-
-  /* XXX Make safe with startup */
-  *ctx = NULL;
 
   return (USBD_OK);
 }
