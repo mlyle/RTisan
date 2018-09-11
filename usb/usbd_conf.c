@@ -200,17 +200,27 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
   /* Initialize LL Driver */
   HAL_PCD_Init(pdev->pData);
 
+  /* EP 0 */
   /* Max size 8,  40-47 */
   HAL_PCDEx_PMAConfig(pdev->pData , 0x00 , PCD_SNG_BUF, 0x40);
   /* Max size 8,  48-4F */
   HAL_PCDEx_PMAConfig(pdev->pData , 0x80 , PCD_SNG_BUF, 0x48);
+
+  /* CDC1 */
   /* Max size 64, 50-8F */
   HAL_PCDEx_PMAConfig(pdev->pData , CDC_IN_EP , PCD_SNG_BUF, 0x50);
   /* Max size 64, 90-CF */
   HAL_PCDEx_PMAConfig(pdev->pData , CDC_OUT_EP , PCD_SNG_BUF, 0x90);
   /* Max size 64, D0-10F */
   HAL_PCDEx_PMAConfig(pdev->pData , CDC_CMD_EP , PCD_SNG_BUF, 0xd0);
-  /* To add - CDC2, 110-14F, 150-18F, 190-1CF */
+
+  /* CDC 2 */
+  /* Max size 64, 110-14F */
+  HAL_PCDEx_PMAConfig(pdev->pData , CDC2_IN_EP , PCD_SNG_BUF, 0x110);
+  /* Max size 64, 150-18F */
+  HAL_PCDEx_PMAConfig(pdev->pData , CDC2_OUT_EP , PCD_SNG_BUF, 0x150);
+  /* Max size 64, 190-1CF */
+  HAL_PCDEx_PMAConfig(pdev->pData , CDC2_CMD_EP , PCD_SNG_BUF, 0x190);
 
   return USBD_OK;
 }

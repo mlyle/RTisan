@@ -86,11 +86,11 @@ static uint8_t UserRxBuffer[APP_RX_DATA_SIZE];/* Received Data over USB are stor
 extern USBD_HandleTypeDef  hUSBDDevice;
 
 /* Private function prototypes -----------------------------------------------*/
-static int8_t CDC_Itf_Init     (void);
-static int8_t CDC_Itf_DeInit   (void);
-static int8_t CDC_Itf_Control  (uint8_t cmd, uint8_t* pbuf, uint16_t length);
-static int8_t CDC_Itf_Receive  (uint8_t* pbuf, uint32_t *Len);
-static int8_t CDC_Itf_TxDone   (void);
+static int8_t CDC_Itf_Init     (int instId, void **ctx);
+static int8_t CDC_Itf_DeInit   (void *ctx);
+static int8_t CDC_Itf_Control  (void *ctx, uint8_t cmd, uint8_t* pbuf, uint16_t length);
+static int8_t CDC_Itf_Receive  (void *ctx, uint8_t* pbuf, uint32_t *Len);
+static int8_t CDC_Itf_TxDone   (void *ctx);
 
 static void CDC_TXBegin(RTStream_t stream, void *ctx);
 static void CDC_RXBegin(RTStream_t stream, void *ctx);
@@ -115,19 +115,29 @@ extern RTStream_t cdcStream;
   * @param  None
   * @retval Result of the opeartion: USBD_OK if all operations are OK else USBD_FAIL
   */
-static int8_t CDC_Itf_Init(void)
+static int8_t CDC_Itf_Init(int instId, void **ctx)
 {
+/* XXX return back the context pointer for that instance id */
+/* XXX Set TX buffer / RX Buffer / TransmitPacket / Receive packet need to
+ * take the instance id
+ */ 
+  if (instId != 0) {
+	  /* XXX */
+	  return USBD_OK;
+  }
   USBD_CDC_SetRxBuffer(&hUSBDDevice, UserRxBuffer);
 
   RTStreamSetTXCallback(cdcStream, CDC_TXBegin, NULL);
   RTStreamSetRXCallback(cdcStream, CDC_RXBegin, NULL);
 
   /* XXX Make safe with startup */
+  *ctx = NULL;
 
   return (USBD_OK);
 }
 
-static void CDC_StartTx(bool finished)
+/* XXX add an instance ID to all other calls */
+static void CDC_StartTx(void *ctx, bool finished)
 {
 	static volatile int inProg = 0;
 	static int numBytes = 0;
@@ -162,7 +172,7 @@ static void CDC_StartTx(bool finished)
 	}
 }
 
-static void CDC_StartRx(bool finished)
+static void CDC_StartRx(void *ctx, bool finished)
 {
 	static volatile int inProg;
 
@@ -184,19 +194,19 @@ static void CDC_RXBegin(RTStream_t stream, void *ctx)
 {
 	(void) stream; (void) ctx;
 
-	CDC_StartRx(false);
+	CDC_StartRx(ctx, false);
 }
 
 static void CDC_TXBegin(RTStream_t stream, void *ctx)
 {
 	(void) stream; (void) ctx;
 
-	CDC_StartTx(false);
+	CDC_StartTx(ctx, false);
 }
 
-static int8_t CDC_Itf_TxDone   (void)
+static int8_t CDC_Itf_TxDone(void *ctx)
 {
-    CDC_StartTx(true);
+    CDC_StartTx(ctx, true);
 
     return (USBD_OK);
 }
@@ -207,7 +217,7 @@ static int8_t CDC_Itf_TxDone   (void)
   * @param  None
   * @retval Result of the opeartion: USBD_OK if all operations are OK else USBD_FAIL
   */
-static int8_t CDC_Itf_DeInit(void)
+static int8_t CDC_Itf_DeInit(void *ctx)
 {
   return (USBD_OK);
 }
@@ -220,7 +230,8 @@ static int8_t CDC_Itf_DeInit(void)
   * @param  Len: Number of data to be sent (in bytes)
   * @retval Result of the opeartion: USBD_OK if all operations are OK else USBD_FAIL
   */
-static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
+static int8_t CDC_Itf_Control(void *ctx, uint8_t cmd, uint8_t* pbuf,
+		uint16_t length)
 { 
   switch (cmd)
   {
@@ -269,10 +280,10 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
   * @param  Len: Number of data received (in bytes)
   * @retval Result of the opeartion: USBD_OK if all operations are OK else USBD_FAIL
   */
-static int8_t CDC_Itf_Receive(uint8_t* Buf, uint32_t *Len)
+static int8_t CDC_Itf_Receive(void *ctx, uint8_t* Buf, uint32_t *Len)
 {
   RTStreamDoRXChunk(cdcStream, (char *) Buf, *Len);
-  CDC_StartRx(true);
+  CDC_StartRx(ctx, true);
 
   return (USBD_OK);
 }
