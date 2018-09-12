@@ -44,9 +44,7 @@ else
 CC := $(ARM_SDK_PREFIX)gcc
 LDFLAGS += -nostartfiles -Wl,-static -Wl,--warn-common -nostdlib
 LDFLAGS += -L/home/mlyle/newlib/lib/newlib-nano/arm-none-eabi/lib/thumb/v7e-m/fpv4-sp/hard
-LDFLAGS += -Ltools/gcc-arm-none-eabi-6-2017-q2-update/lib/gcc/arm-none-eabi/6.3.1/thumb/v7e-m/fpv4-sp/hard
-#LDFLAGS += -L/home/mlyle/newlib/lib/newlib-nano/arm-none-eabi/lib/thumb/v7e-m
-#LDFLAGS += -Ltools/gcc-arm-none-eabi-6-2017-q2-update/lib/gcc/arm-none-eabi/6.3.1/thumb/v7e-m
+LDFLAGS += -L$(ARM_SDK_DIR)/lib/gcc/arm-none-eabi/6.3.1/thumb/v7e-m/fpv4-sp/hard
 
 LDFLAGS += -Wl,--fatal-warnings -Wl,--gc-sections
 LDFLAGS += -Tmemory.ld -Ttasker.ld
@@ -57,7 +55,7 @@ INC += libs/inc/stm32f3xx
 INC += libs/inc/usb
 INC += libs/inc/cmsis
 INC += /home/mlyle/newlib/lib/newlib-nano/arm-none-eabi/include/
-INC += tools/gcc-arm-none-eabi-6-2017-q2-update/lib/gcc/arm-none-eabi/6.3.1/include/
+INC += $(ARM_SDK_DIR)/lib/gcc/arm-none-eabi/6.3.1/include/
 INC += arm/inc
 
 SRC += $(wildcard arm/*.c)
