@@ -158,15 +158,12 @@ int RTStreamSend(RTStream_t stream, const char *buf,
 
 		doneSoFar += RTCQWrite(stream->txCircQueue,
 				buf + doneSoFar, len - doneSoFar);
-		if ((!stream->blockUntilCallbacks) || (stream->txCb)) {
-		}
 
 		if (stream->txCb) {
 			stream->txCb(stream, stream->txCtx);
 		}
 
 		if (!block) {
-			stream->waitingForTx = 0;
 			break;
 		}
 
