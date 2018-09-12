@@ -63,7 +63,7 @@ inline TaskId_t RTGetTaskId(void)
 {
 	pthread_t self = pthread_self();
 
-	for (int i = 0; i < TASK_MAX; i++) {
+	for (int i = 1; i <= TASK_MAX; i++) {
 		if (!taskTable[i]) continue;
 
 		if (pthread_equal(self, taskTable[i]->thread)) {
