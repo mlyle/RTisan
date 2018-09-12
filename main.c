@@ -24,6 +24,8 @@ RTStream_t cdcStreams[2];
 #include "usbd_cdc_interface.h"
 USBD_HandleTypeDef hUSBDDevice;
 
+static void USB_LP_IRQHandler(void) __attribute__((interrupt));
+
 static void USB_LP_IRQHandler(void)
 {
 	extern PCD_HandleTypeDef hpcd;
