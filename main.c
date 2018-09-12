@@ -39,7 +39,8 @@ const void *interrupt_vectors[] __attribute((section(".interrupt_vectors"))) =
 	[DMA2_Channel1_IRQn] = RTSPIDMAF3IRQDMA2Chan1,
 	[USB_LP_CAN_RX0_IRQn] = USB_LP_IRQHandler,
 };
-
+#else
+#include <rtisan_tcp.h>
 #endif
 
 /* End interim USB stuff */
@@ -82,6 +83,8 @@ int main(void)
 	RTLEDSet(0, true);
 	RTLEDSet(2, true);
 
+	RTTasksInit();
+
 	cdcStreams[0] = RTStreamCreate(1, 97, 97, true);
 	cdcStreams[1] = RTStreamCreate(1, 97, 97, true);
 
@@ -105,21 +108,11 @@ int main(void)
 	/* Start Device Process */
 	USBD_Start(&hUSBDDevice);
 	/* XXX end USB chunk 2 */
+#else
+	RTTCPAttach(cdcStreams[1], 3133);
 #endif
-
-	RTTasksInit();
-
-#if 0
-	lock = RTLockCreate();
-
-	RTTaskCreate(10, othertask, (void *) 3);
-	RTTaskCreate(11, othertask, (void *) 7);
-	RTTaskCreate(12, othertask, (void *) 1000);
-#endif
-//	RTTaskCreate(10, factortask, (void *) 3);
 
 #if defined(MAINFUNC)
-
 	struct mainargs args = { argc, argv };
 	RTTaskCreate(10, maintask, &args);
 #endif
