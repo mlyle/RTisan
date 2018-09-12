@@ -113,16 +113,13 @@ flash: $(BUILD_DIR)/tasker.bin
 
 .PHONY: clean flash
 
-$(BUILD_DIR)/%.o: %.c $(OBJ_FORCE)
+$(BUILD_DIR)/%.o: %.c $(OBJ_FORCE) Makefile
 	@mkdir -p $(dir $@)
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 $(BUILD_DIR)/%.d: %.c
 	@mkdir -p $(dir $@)
-	@set -e; rm -f $@; \
-	$(CC) -M $(CPPFLAGS) $< > $@.$$$$; \
-	sed 's,\($*\)\.o[ :]*,$(BUILD_DIR)/\1.o $(BUILD_DIR)/$@ : Makefile ,g' < $@.$$$$ > $@; \
-	rm -f $@.$$$$
+	@$(CC) -M -MT "$(patsubst %.d,%.o,$@) $@" $(CPPFLAGS) $< > $@
 
 -include $(patsubst %.c,$(BUILD_DIR)/%.d,$(SRC))
 
