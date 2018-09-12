@@ -28,6 +28,9 @@ void _start(void)
 	/* bzero(&_sfast, &_efast - &_sfast); */
 
 #ifdef HAVE_FPU
+	/* Enable the FPU in the coprocessor state register; CP10/11 */
+	SCB->CPACR |= 0x00f00000;
+
 	/* FPU interrupt handling: lazy save of FP state */
 	FPU->FPCCR |= FPU_FPCCR_ASPEN_Msk | FPU_FPCCR_LSPEN_Msk;
 
@@ -35,9 +38,6 @@ void _start(void)
 	 * flush-to-zero handling for subnormals
 	 */
 	FPU->FPDSCR |= FPU_FPDSCR_DN_Msk | FPU_FPDSCR_FZ_Msk;
-
-	/* Enable the FPU in the coprocessor state register; CP10/11 */
-	SCB->CPACR |= 0x00f00000;
 #endif
 
 	/* Invoke main. */
