@@ -7,8 +7,9 @@
 #include "rtisan_internal.h"
 
 #define THUMB_PC_MASK 0xfffffffe
-#define EXC_RET_THREAD 0xfffffffd
+#define EXC_RET_THREAD 0xffffffed
 
+/* XXX Must be multiple of 8 */
 #define PROC_STACK_SIZE 1600
 
 struct _reent default_reent;
@@ -34,7 +35,8 @@ struct RTTask_s {
 
 	struct _reent reent;
 
-	uint32_t canary;
+	/* Ensures doubleword align of stack */
+	uint64_t canary;
 };
 
 union LockInfo {
@@ -320,8 +322,13 @@ static void RTTaskCreateImpl(RTTask_t taskRec, void (*task)(void *), void *arg)
 	void *endStack = ((void *) taskRec) +
 		GetTaskAllocSize();
 
+	/* XXX stack alignment  confirm !! */
+
 	taskRec->sp = endStack;
 	/* setup initial stack frame */
+
+	/* XXX */
+	--taskRec->sp;
 
 #ifdef HAVE_FPU
 	*(--taskRec->sp) = FPU->FPDSCR; /* FPSCR: default values */
@@ -340,7 +347,7 @@ static void RTTaskCreateImpl(RTTask_t taskRec, void (*task)(void *), void *arg)
 	*(--taskRec->sp) = 0;           /* s3 */
 	*(--taskRec->sp) = 0;           /* s2 */
 	*(--taskRec->sp) = 0;           /* s1 */
-	*(--taskRec->sp) = 0;           /* s0 */
+	*(--taskRec->sp) = 0x12341234;  /* s0 */
 #endif
 
 	*(--taskRec->sp) = 0x21000000; /* Initial PSR */

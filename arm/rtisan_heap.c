@@ -25,7 +25,6 @@ void RTHeapInit()
 /* alignment must be a power of 2 */
 void *RTaligned_alloc(size_t alignment, size_t size)
 {
-
 	/* We don't implement negative sbrk, etc */
 	if (size < 0) {
 		return NULL;
@@ -59,7 +58,7 @@ void *RTaligned_alloc(size_t alignment, size_t size)
 
 void *RTmalloc(size_t size)
 {
-	return RTaligned_alloc(sizeof(uintptr_t), size);
+	return RTaligned_alloc(8, size);
 }
 
 void *RTcalloc(size_t nmemb, size_t size)
