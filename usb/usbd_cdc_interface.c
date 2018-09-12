@@ -80,6 +80,10 @@ struct CDCInterface_s {
 	RTStream_t stream;
 	USBD_CDC_LineCodingTypeDef LineCoding;
 	int cdcInstNum;
+
+	volatile int txInProg;
+	volatile int rxInProg;
+	int txNumBytes;
 };
 
 #define MAX_INTERFACES 2
@@ -127,7 +131,7 @@ static int8_t CDC_Itf_Init(int instId, void **ctx)
 		return USBD_OK;
 	}
 
-	struct CDCInterface_s *iface = malloc(sizeof(*iface));
+	struct CDCInterface_s *iface = calloc(1, sizeof(*iface));
 	assert(iface);
 
 	instances[instId] = iface;
@@ -158,32 +162,35 @@ static void CDC_StartTx(void *ctx, bool finished)
 	struct CDCInterface_s *iface = ctx;
 	assert(iface->magic == CDCINTERFACE_MAGIC);
 
-	static volatile int inProg = 0;
-	static int numBytes = 0;
-
 	if (finished) {
-		if (numBytes) {
-			RTStreamZeroCopyTXDone(iface->stream, numBytes);
-			numBytes = 0;
+		if (iface->txNumBytes) {
+			RTStreamZeroCopyTXDone(iface->stream,
+					iface->txNumBytes);
+			iface->txNumBytes = 0;
 		}
 
-		inProg = 0;
-	} else if (inProg) {
+		iface->txInProg = 0;
+	} else if (iface->txInProg) {
 		return;
 	}
 
-	const char *toXmit = RTStreamZeroCopyTXPos(iface->stream, &numBytes);
+	int txNumBytes;
+
+	const char *toXmit = RTStreamZeroCopyTXPos(iface->stream,
+			&txNumBytes);
 
 	/* XXX cork */
-	if (numBytes) {
-		inProg = 1;
+	if (txNumBytes) {
+		iface->txInProg = 1;
 
-		if (numBytes > 64) {
-			numBytes = 64;
+		if (txNumBytes > 64) {
+			txNumBytes = 64;
 		}
 
+		iface->txNumBytes = txNumBytes;
+
 		USBD_CDC_SetTxBuffer(&hUSBDDevice, iface->cdcInstNum,
-				(const uint8_t *) toXmit, numBytes);
+				(const uint8_t *) toXmit, txNumBytes);
 		USBD_CDC_TransmitPacket(&hUSBDDevice, iface->cdcInstNum);
 	}
 }
@@ -193,18 +200,16 @@ static void CDC_StartRx(void *ctx, bool finished)
 	struct CDCInterface_s *iface = ctx;
 	assert(iface->magic == CDCINTERFACE_MAGIC);
 
-	static volatile int inProg;
-
 	if (finished) {
-		inProg = 0;
-	} else if (inProg) {
+		iface->rxInProg = 0;
+	} else if (iface->rxInProg) {
 		return;
 	}
 
 	int recvSpace = RTStreamGetRXAvailable(iface->stream);
 
 	if (recvSpace >= 64) {
-		inProg = 1;
+		iface->rxInProg = 1;
 		USBD_CDC_ReceivePacket(&hUSBDDevice, iface->cdcInstNum);
 	}
 }
