@@ -126,12 +126,15 @@ static int8_t CDC_Itf_Init(int instId, void **ctx)
 	if (instId > MAX_INTERFACES) {
 		return USBD_FAIL;
 	}
+
+	struct CDCInterface_s *iface;
+
 	if (instances[instId]) {
-		*ctx = instances[instId];
-		return USBD_OK;
+		iface = instances[instId];
+	} else {
+		iface = calloc(1, sizeof(*iface));
 	}
 
-	struct CDCInterface_s *iface = calloc(1, sizeof(*iface));
 	assert(iface);
 
 	instances[instId] = iface;
