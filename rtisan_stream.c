@@ -156,18 +156,23 @@ int RTStreamSend(RTStream_t stream, const char *buf,
 			wc = RTGetWakeCount();
 		}
 
+		doneSoFar += RTCQWrite(stream->txCircQueue,
+				buf + doneSoFar, len - doneSoFar);
 		if ((!stream->blockUntilCallbacks) || (stream->txCb)) {
-			doneSoFar += RTCQWrite(stream->txCircQueue,
-					buf + doneSoFar, len - doneSoFar);
 		}
 
 		if (stream->txCb) {
 			stream->txCb(stream, stream->txCtx);
 		}
 
-		if ((!block) || (doneSoFar >= len)) {
+		if (!block) {
 			stream->waitingForTx = 0;
+			break;
+		}
 
+		if (((!stream->blockUntilCallbacks) || (stream->txCb)) &&
+				(doneSoFar >= len)) {
+			stream->waitingForTx = 0;
 			break;
 		}
 
