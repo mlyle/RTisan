@@ -14,7 +14,7 @@ INC += usb
 BUILD_DIR := build
 
 CFLAGS :=
-CFLAGS += -fomit-frame-pointer -Wall -g3 -Os
+CFLAGS += -fomit-frame-pointer -Wall -g3 -O3
 LIBS :=
 LDFLAGS :=
 SRC :=
