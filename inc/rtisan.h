@@ -21,6 +21,7 @@ WakeCounter_t RTGetWakeCount(void);
 void RTWait(WakeCounter_t wakeThreshold);
 void RTGo(void);
 void RTSleep(uint32_t ticks);
+void RTSleepUntil(uint32_t ticks);
 void RTWake(TaskId_t task);
 /* Must call this after doing (a series of) wakes */
 void RTResched(void);

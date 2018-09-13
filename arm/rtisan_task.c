@@ -294,10 +294,8 @@ void RTWait(WakeCounter_t wakeThreshold)
 }
 
 #define MAX_SLEEP_CHUNK 127
-void RTSleep(uint32_t ticks)
+void RTSleepUntil(uint32_t completion)
 {
-	uint32_t completion = systick_cnt + ticks;
-
 	int32_t remain;
 
 	while ((remain = (completion - systick_cnt)) > 0) {
@@ -313,6 +311,11 @@ void RTSleep(uint32_t ticks)
 
 		task->ticksCreateWakes = false;
 	};
+}
+
+void RTSleep(uint32_t ticks)
+{
+	RTSleepUntil(systick_cnt + ticks);
 }
 
 static void RTTaskCreateImpl(RTTask_t taskRec, void (*task)(void *), void *arg)
