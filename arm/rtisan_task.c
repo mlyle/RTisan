@@ -37,8 +37,7 @@ struct RTTask_s {
 
 	TaskId_t taskId;
 
-	/* Ensures doubleword align of stack */
-	uint64_t canary;
+	uint32_t canary;
 };
 
 union LockInfo {
@@ -320,17 +319,20 @@ static void RTTaskCreateImpl(RTTask_t taskRec, void (*task)(void *), void *arg)
 {
 	memset(&taskRec->reent, 0, sizeof(taskRec->reent));
 
-	void *endStack = ((void *) taskRec) +
+	uintptr_t endStack = ((uintptr_t) taskRec) +
 		GetTaskAllocSize();
 
-	/* XXX stack alignment  confirm !! */
+	int aligner = (endStack & 0x7);
 
-	taskRec->sp = endStack;
+	if (aligner) {
+		endStack -= aligner;
+	}
+
+	taskRec->sp = (void *) endStack;
+
+	--taskRec->sp; --taskRec->sp;
+
 	/* setup initial stack frame */
-
-	/* XXX */
-	--taskRec->sp;
-
 #ifdef HAVE_FPU
 	*(--taskRec->sp) = FPU->FPDSCR; /* FPSCR: default values */
 	*(--taskRec->sp) = 0;           /* s15 */
