@@ -245,7 +245,7 @@ static inline void RTSPIDMAF3NextMessage(RTSPIDMAF3Periph_t periph)
 	RTSPIDMAF3BeginTransfer(periph);
 }
 
-static void RTSPIDMAF3DoWork(int idx)
+static inline void RTSPIDMAF3DoWork(int idx)
 {
 	RTSPIDMAF3Periph_t periph = F3SPIHandles[idx];
 
@@ -275,8 +275,6 @@ static int RTSPIDMAF3Start(RTSPIPeriph_t wrapper, void *ctx)
 
 	assert(periph->magic == RTSPIDMAF3_MAGIC);
 	assert(periph->wrapper == wrapper);
-
-	__sync_synchronize();
 
 	/* At this point, the work item has already been posted to the
 	 * queue.  The interrupt handler is "atomic" from our point of
