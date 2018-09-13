@@ -35,6 +35,8 @@ struct RTTask_s {
 
 	struct _reent reent;
 
+	TaskId_t taskId;
+
 	/* Ensures doubleword align of stack */
 	uint64_t canary;
 };
@@ -53,7 +55,7 @@ struct RTLock_s {
 };
 
 static struct RTTask_s * volatile taskTable[TASK_MAX + 1];
-static TaskId_t curTask;
+RTTask_t curTask;
 
 static void RTTaskCreateImpl(RTTask_t taskRec, void (*task)(void *), void *arg);
 
@@ -83,6 +85,7 @@ RTTask_t RTTaskCreate(RTPrio_t prio, void (*func)(void *), void *arg)
 		task->priority = prio;
 		task->blockingInfo.val32 = 0;
 		task->ticksCreateWakes = false;
+		task->taskId = i;
 
 		RTTaskCreateImpl(task, func, arg);
 
@@ -98,12 +101,12 @@ RTTask_t RTTaskCreate(RTPrio_t prio, void (*func)(void *), void *arg)
 
 inline TaskId_t RTGetTaskId(void)
 {
-	return curTask;
+	return curTask->taskId;
 }
 
 static inline RTTask_t RTTaskSelected(void)
 {
-	return taskTable[curTask];
+	return curTask;
 }
 
 static bool BlockingInfoIsWoke(union BlockingInfo *bInfo)
@@ -168,7 +171,7 @@ void RTWake(TaskId_t task)
 	IncrementWakes(t);
 }
 
-TaskId_t RTTaskToRun(void)
+RTTask_t RTTaskToRun(void)
 {
 	static uint32_t lastSystick;
 	uint32_t nowSystick = systick_cnt;
@@ -179,7 +182,7 @@ TaskId_t RTTaskToRun(void)
 		ticking = true;
 	}
 
-	TaskId_t bestTask = 0;
+	RTTask_t bestTask = NULL;
 	int bestPrio = -1;
 
 	for (int i = 1; i <= TASK_MAX; i++) {
@@ -196,19 +199,19 @@ TaskId_t RTTaskToRun(void)
 		}
 
 		/* Prefer to keep current task running. */
-		if ((curTask != i) &&
+		if ((curTask != taskTable[i]) &&
 				(taskTable[i]->priority == bestPrio)) {
 			continue;
 		}
 
 		if (RTTaskIsWoke(taskTable[i])) {
-			bestTask = i;
+			bestTask = taskTable[i];
 			bestPrio = taskTable[i]->priority;
 		}
 	}
 
 	if (bestTask == curTask) {
-		return 0;
+		return NULL;
 	}
 
 	return bestTask;
@@ -216,21 +219,17 @@ TaskId_t RTTaskToRun(void)
 
 /* Saves PSP into current task.  Selects newTask and returns its SP.
  */
-void *RTTaskStackSave(TaskId_t newTask, void *psp)
+void *RTTaskStackSave(RTTask_t newTask, void *psp)
 {
-	RTTask_t ourTask = RTTaskSelected();
-
 	if (psp) {
-		ourTask->sp = psp;
+		curTask->sp = psp;
 	}
 
 	curTask = newTask;
 
-	ourTask = RTTaskSelected();
+	_impure_ptr = &newTask->reent;
 
-	_impure_ptr = &ourTask->reent;
-
-	return ourTask->sp;
+	return newTask->sp;
 }
 
 WakeCounter_t RTGetWakeCount(void)
