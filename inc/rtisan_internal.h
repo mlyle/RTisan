@@ -12,7 +12,6 @@
 #endif
 
 #include <rtisan.h>
-#include <systick_handler.h>
 
 #include <rtisan_assert.h>
 

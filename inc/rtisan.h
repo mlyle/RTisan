@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include <systick_handler.h>
+
 #define TASK_MAX 8
 #define LOCK_WAITERS_MAX 4
 
