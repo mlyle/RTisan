@@ -15,8 +15,6 @@ struct RTSPIPeriph_s {
 	RTCircQueue_t transfers;
 	RTLock_t addLock;
 
-	RTSPITransfer_t *curTransfer;
-
 	RTSPIStartHandler_t startHandler;
 	void *ctx;
 };
@@ -37,7 +35,6 @@ RTSPIPeriph_t RTSPICreate(RTSPIStartHandler_t startHandler, void *ctx)
 
 	assert(periph->addLock);
 
-	periph->curTransfer = NULL;
 	periph->startHandler = startHandler;
 	periph->ctx = ctx;
 
@@ -62,10 +59,6 @@ void RTSPIWakeupTaskCallback(TaskId_t task, void *ctx)
 void RTSPITransferCompleted(RTSPIPeriph_t periph,
 		RTSPITransfer_t *transfer, bool success)
 {
-	assert(transfer == periph->curTransfer);
-
-	periph->curTransfer = NULL;
-
 	assert(transfer->dispatched);
 	assert(!transfer->completed);
 
@@ -82,8 +75,6 @@ RTSPITransfer_t *RTSPITransferNext(RTSPIPeriph_t periph)
 {
 	RTSPITransfer_t *result;
 
-	assert(periph->curTransfer == NULL);
-
 	if (RTCQRead(periph->transfers, &result, 1) != 1) {
 		return NULL;
 	}
@@ -93,8 +84,6 @@ RTSPITransfer_t *RTSPITransferNext(RTSPIPeriph_t periph)
 	result->dispatched = true;
 
 	assert(!result->completed);
-
-	periph->curTransfer = result;
 
 	return result;
 }
