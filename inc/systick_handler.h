@@ -31,5 +31,6 @@
 
 extern volatile uint32_t systick_cnt;
 void RTEnableSystick(void);
+void RTSystickTrim(int amount);
 
 #endif // _SYSTICK_HANDLER_H

@@ -11,6 +11,16 @@ static void systick_handler()
 	*((uint32_t volatile *)0xE000ED04) = 0x10000000;
 }
 
+void RTSystickTrim(int amount) {
+	if (amount < -20) {
+		amount = -20;
+	} else if (amount > 20) {
+		amount = 20;
+	}
+
+	SysTick->LOAD = 72000 - 1 + amount;
+}
+
 void RTEnableSystick(void)
 {
 	SysTick->LOAD = 72000 - 1;

@@ -241,3 +241,7 @@ uint32_t RTHeapFree(uint32_t *heapSize)
 
 	return 1048576;
 }
+
+void RTSystickTrim(int amount) {
+	(void) amount;
+}
