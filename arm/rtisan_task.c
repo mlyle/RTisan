@@ -290,7 +290,9 @@ void RTWait(WakeCounter_t wakeThreshold)
 					original,
 					bInfo.val32)));
 
-	RTResched();
+	if (!BlockingInfoIsWoke(&bInfo)) {
+		Resched();
+	}
 }
 
 #define MAX_SLEEP_CHUNK 127
