@@ -132,8 +132,10 @@ static int8_t CDC_Itf_Init(int instId, void **ctx)
 	if (instances[instId]) {
 		iface = instances[instId];
 	} else {
-		iface = calloc(1, sizeof(*iface));
+		iface = malloc(sizeof(*iface));
 	}
+
+	memset(iface, 0, sizeof(*iface));
 
 	assert(iface);
 
