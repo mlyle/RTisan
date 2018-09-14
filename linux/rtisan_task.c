@@ -86,7 +86,7 @@ static bool RTTaskIsWoke(RTTask_t task)
 	return wakeConsider <= 0;
 }
 
-static void IncrementWakes(RTTask_t task)
+static bool IncrementWakes(RTTask_t task)
 {
 	task->wakes++;
 
