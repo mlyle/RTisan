@@ -2,6 +2,7 @@
 #define __RTIASN_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <systick_handler.h>
 
@@ -24,7 +25,7 @@ void RTWait(WakeCounter_t wakeThreshold);
 void RTGo(void);
 void RTSleep(uint32_t ticks);
 void RTSleepUntil(uint32_t ticks);
-void RTWake(TaskId_t task);
+bool RTWake(TaskId_t task);
 /* Must call this after doing (a series of) wakes */
 void RTResched(void);
 

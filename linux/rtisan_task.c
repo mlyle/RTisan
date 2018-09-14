@@ -97,10 +97,14 @@ static void IncrementWakes(RTTask_t task)
 	}
 
 	pthread_cond_broadcast(&task->cond);
+
+	return RTTaskIsWoke(task);
 }
 
-void RTWake(TaskId_t task)
+bool RTWake(TaskId_t task)
 {
+	bool ret;
+
 	assert(task > 0);
 	assert(task <= TASK_MAX);
 
@@ -109,8 +113,10 @@ void RTWake(TaskId_t task)
 	assert(t);
 
 	pthread_mutex_lock(&t->mutex);
-	IncrementWakes(t);
+	ret = IncrementWakes(t);
 	pthread_mutex_unlock(&t->mutex);
+
+	return ret;
 }
 
 WakeCounter_t RTGetWakeCount(void)

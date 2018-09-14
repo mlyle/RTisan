@@ -85,8 +85,8 @@ int main(void)
 
 	RTTasksInit();
 
-	cdcStreams[0] = RTStreamCreate(1, 97, 97, true);
-	cdcStreams[1] = RTStreamCreate(1, 97, 97, true);
+	cdcStreams[0] = RTStreamCreate(1, 193, 193, true);
+	cdcStreams[1] = RTStreamCreate(1, 193, 193, true);
 
 #ifndef __linux__
 	/* XXX begin USB chunk 2 */

@@ -108,7 +108,7 @@ static inline RTTask_t RTTaskSelected(void)
 	return curTask;
 }
 
-static bool BlockingInfoIsWoke(union BlockingInfo *bInfo)
+static inline bool BlockingInfoIsWoke(union BlockingInfo *bInfo)
 {
 	int8_t wakeConsider = bInfo->fields.wakeThreshold -
 		bInfo->fields.wakeCount;
@@ -125,7 +125,7 @@ static bool RTTaskIsWoke(RTTask_t task)
 	return BlockingInfoIsWoke(&bInfo);
 }
 
-static void IncrementWakes(RTTask_t task)
+static inline bool IncrementWakes(RTTask_t task)
 {
 	uint32_t original;
 	union BlockingInfo bInfo;
@@ -156,9 +156,16 @@ static void IncrementWakes(RTTask_t task)
 					&task->blockingInfo.val32,
 					original,
 					bInfo.val32));
+
+	if (curTask && (task->priority <= curTask->priority)) {
+		// Latter term is also true when it's the same task :D
+		return false;
+	}
+
+	return BlockingInfoIsWoke(&bInfo);
 }
 
-void RTWake(TaskId_t task)
+bool RTWake(TaskId_t task)
 {
 	assert(task > 0);
 	assert(task <= TASK_MAX);
@@ -167,7 +174,7 @@ void RTWake(TaskId_t task)
 
 	assert(t);
 
-	IncrementWakes(t);
+	return IncrementWakes(t);
 }
 
 RTTask_t RTTaskToRun(void)
@@ -513,7 +520,7 @@ void RTLockUnlock(RTLock_t lock)
 
 	lock->lockInfo.val32 = 0;
 
-	bool wokeSomeone;
+	bool wokeSomeone = false;
 
 	/* Remove ourselves from waiters, wake all others */
 	for (int i = 0; i < LOCK_WAITERS_MAX; i++) {
@@ -522,9 +529,7 @@ void RTLockUnlock(RTLock_t lock)
 		if (task != ourTask) {
 			/* Can result in extra wakes */
 			if (task) {
-				RTWake(task);
-
-				wokeSomeone = true;
+				wokeSomeone = wokeSomeone || RTWake(task);
 			}
 		} else {
 			lock->waiters[i] = 0;

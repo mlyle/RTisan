@@ -83,8 +83,10 @@ static inline void WakeTX(RTStream_t stream)
 	TaskId_t waiting = stream->waitingForTx;
 
 	if (waiting) {
-		RTWake(waiting);
-		RTResched();
+		bool woken = RTWake(waiting);
+		if (woken) {
+			RTResched();
+		}
 	}
 }
 
@@ -228,8 +230,10 @@ static inline void WakeRX(RTStream_t stream)
 	TaskId_t waiting = stream->waitingForRx;
 
 	if (waiting) {
-		RTWake(waiting);
-		RTResched();
+		bool woken = RTWake(waiting);
+		if (woken) {
+			RTResched();
+		}
 	}
 }
 
