@@ -60,7 +60,7 @@
     comInEp,                                /* bEndpointAddress */      \
     USB_ENDPOINT_TYPE_INTERRUPT,            /* bmAttributes */          \
     WBVAL(CDC_CMD_PACKET_SIZE),             /* wMaxPacketSize */        \
-    0x01,                                   /* bInterval */             \
+    0x07,                                   /* bInterval */             \
                                                                         \
 /* CDC Data Interface Descriptor */                                     \
     USB_INTERFACE_DESC_SIZE,                /* bLength */               \
