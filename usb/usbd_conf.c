@@ -191,7 +191,7 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
 	/* Set LL Driver parameters */
 	hpcd.Instance = USB;
 	hpcd.Init.dev_endpoints = 8;
-	hpcd.Init.ep0_mps = PCD_EP0MPS_08;
+	hpcd.Init.ep0_mps = PCD_EP0MPS_32;
 	hpcd.Init.phy_itface = PCD_PHY_EMBEDDED;
 	hpcd.Init.speed = PCD_SPEED_FULL;
 	/* Link The driver to the stack */
@@ -201,26 +201,26 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
 	HAL_PCD_Init(pdev->pData);
 
 	/* EP 0 */
-	/* Max size 8,  40-47 */
+	/* Max size 32,  40-5F */
 	HAL_PCDEx_PMAConfig(pdev->pData, 0x00, PCD_SNG_BUF, 0x40);
-	/* Max size 8,  48-4F */
-	HAL_PCDEx_PMAConfig(pdev->pData, 0x80, PCD_SNG_BUF, 0x48);
+	/* Max size 32,  60-7F */
+	HAL_PCDEx_PMAConfig(pdev->pData, 0x80, PCD_SNG_BUF, 0x60);
 
 	/* CDC1 */
-	/* Max size 64, 50-8F */
-	HAL_PCDEx_PMAConfig(pdev->pData, CDC_IN_EP, PCD_SNG_BUF, 0x50);
-	/* Max size 64, 90-CF */
-	HAL_PCDEx_PMAConfig(pdev->pData, CDC_OUT_EP, PCD_SNG_BUF, 0x90);
-	/* Max size 64, D0-10F */
-	HAL_PCDEx_PMAConfig(pdev->pData, CDC_CMD_EP, PCD_SNG_BUF, 0xd0);
+	/* Max size 64, 80-AF */
+	HAL_PCDEx_PMAConfig(pdev->pData, CDC_IN_EP, PCD_SNG_BUF, 0x80);
+	/* Max size 64, B0-FF */
+	HAL_PCDEx_PMAConfig(pdev->pData, CDC_OUT_EP, PCD_SNG_BUF, 0xb0);
+	/* Max size 64, 100-13F */
+	HAL_PCDEx_PMAConfig(pdev->pData, CDC_CMD_EP, PCD_SNG_BUF, 0x100);
 
 	/* CDC 2 */
-	/* Max size 64, 110-14F */
-	HAL_PCDEx_PMAConfig(pdev->pData, CDC2_IN_EP, PCD_SNG_BUF, 0x110);
-	/* Max size 64, 150-18F */
-	HAL_PCDEx_PMAConfig(pdev->pData, CDC2_OUT_EP, PCD_SNG_BUF, 0x150);
-	/* Max size 64, 190-1CF */
-	HAL_PCDEx_PMAConfig(pdev->pData, CDC2_CMD_EP, PCD_SNG_BUF, 0x190);
+	/* Max size 64, 140-17F */
+	HAL_PCDEx_PMAConfig(pdev->pData, CDC2_IN_EP, PCD_SNG_BUF, 0x140);
+	/* Max size 64, 180-1BF */
+	HAL_PCDEx_PMAConfig(pdev->pData, CDC2_OUT_EP, PCD_SNG_BUF, 0x180);
+	/* Max size 64, 1C0-1FF */
+	HAL_PCDEx_PMAConfig(pdev->pData, CDC2_CMD_EP, PCD_SNG_BUF, 0x1c0);
 
 	return USBD_OK;
 }
