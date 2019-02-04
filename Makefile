@@ -3,6 +3,10 @@
 TOOLS_DIR := tools
 ARM_SDK_DIR := $(TOOLS_DIR)/gcc-arm-none-eabi-6-2017-q2-update
 ARM_SDK_PREFIX := $(ARM_SDK_DIR)/bin/arm-none-eabi-
+NEWLIB_DIR := /home/mlyle/newlib/lib/newlib-nano/arm-none-eabi
+
+NEWLIB_INCDIR := $(NEWLIB_DIR)/include
+NEWLIB_ARCHBINDIR := $(NEWLIB_DIR)/lib/thumb/v7e-m/fpv4-sp/hard
 
 ifeq ("$(wildcard $(ARM_SDK_PREFIX)gcc*)","")
     $(error **ERROR** ARM-SDK is not in $(ARM_SDK_DIR))
@@ -43,7 +47,7 @@ else
 ### EMBEDDED SPECIFIC STUFF HERE ###
 CC := $(ARM_SDK_PREFIX)gcc
 LDFLAGS += -nostartfiles -Wl,-static -Wl,--warn-common -nostdlib
-LDFLAGS += -L/home/mlyle/newlib/lib/newlib-nano/arm-none-eabi/lib/thumb/v7e-m/fpv4-sp/hard
+LDFLAGS += -L$(NEWLIB_ARCHBINDIR)
 LDFLAGS += -L$(ARM_SDK_DIR)/lib/gcc/arm-none-eabi/6.3.1/thumb/v7e-m/fpv4-sp/hard
 
 LDFLAGS += -Wl,--fatal-warnings -Wl,--gc-sections
@@ -54,7 +58,7 @@ LIBS += -lc -lgcc
 INC += libs/inc/stm32f3xx
 INC += libs/inc/usb
 INC += libs/inc/cmsis
-INC += /home/mlyle/newlib/lib/newlib-nano/arm-none-eabi/include/
+INC += $(NEWLIB_INCDIR)
 INC += $(ARM_SDK_DIR)/lib/gcc/arm-none-eabi/6.3.1/include/
 INC += arm/inc
 
