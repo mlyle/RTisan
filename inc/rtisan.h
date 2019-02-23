@@ -33,7 +33,7 @@ TaskId_t RTGetTaskId(void);
 uint32_t RTHeapFree(uint32_t *heapSize);
 
 #define RT_NAME "RTisan RTOS by Michael Lyle"
-#define RT_VERSIONSTR "0.10A"
+#define RT_VERSIONSTR "1.00A"
 
 #define RTNUMELEM(x) (sizeof(x) / sizeof(*(x)))
 #define RTUNUSED __attribute__ ((unused))
