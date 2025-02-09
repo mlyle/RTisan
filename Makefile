@@ -4,8 +4,10 @@ TOOLS_DIR := tools
 ARM_SDK_DIR := $(TOOLS_DIR)/gcc-arm-none-eabi-6-2017-q2-update
 ARM_SDK_PREFIX := $(ARM_SDK_DIR)/bin/arm-none-eabi-
 
+ifeq ($(LINUX)x,x)
 ifeq ("$(wildcard $(ARM_SDK_PREFIX)gcc*)","")
     $(error **ERROR** ARM-SDK is not in $(ARM_SDK_DIR))
+endif
 endif
 
 INC :=
@@ -36,7 +38,7 @@ ifneq ($(LINUX)x,x)
 BUILD_DIR := build.linux
 SRC += $(wildcard linux/*.c)
 INC += linux/inc
-CPPFLAGS += -pthread
+CPPFLAGS += -pthread -D__linux__
 LDFLAGS += -pthread
 LIBS += -lreadline
 else

@@ -15,7 +15,7 @@ typedef struct RTLock_s *RTLock_t;
 
 void RTTasksInit();
 
-typedef uint8_t WakeCounter_t;
+typedef int8_t WakeCounter_t;
 typedef uint8_t RTPrio_t;
 typedef uint16_t TaskId_t;
 
